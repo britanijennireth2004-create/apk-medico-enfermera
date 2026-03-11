@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HUMNT - Doctor Móvil</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Modular Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <!-- SplashScreen -->
+    <div id="loading-screen">
+        <div class="splash-logo-container">
+            <div class="splash-spinner"></div>
+            <div class="splash-spinner-inner"></div>
+            <div class="splash-initials">HUMNT</div>
+        </div>
+        <p>Cargando Sistema Médico...</p>
+    </div>
+
+    <div class="app-container" style="display: none;">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="header-top">
+                <button class="menu-toggle" id="menu-toggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="profile-section">
+                    <div class="profile-img" id="header-doctor-img"></div>
+                    <div>
+                        <div class="greeting" id="greeting-text">Hola,</div>
+                        <div class="doctor-name" id="header-doctor-name">Doctor</div>
+                    </div>
+                </div>
+                <button class="notification-btn" id="notif-btn">
+                    <i class="fa-regular fa-bell"></i>
+                    <div class="badge" id="notif-badge"></div>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div id="global-stats" class="stats-container">
+            <div class="stat-item">
+                <div class="stat-val" id="stat-total">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val" style="color: var(--warning)" id="stat-pending">0</div>
+                <div class="stat-label">Pendientes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val" style="color: var(--secondary)" id="stat-done">0</div>
+                <div class="stat-label">Atendidos</div>
+            </div>
+        </div>
+
+        <!-- Dynamic Content Area -->
+        <div class="main-content" id="main-scroll">
+
+            <!-- VISTA: LOGIN -->
+            <div id="view-login" class="view active">
+                <div class="login-page">
+                    <div class="login-card">
+                        <div class="login-form-panel" style="width: 100%;">
+                            <!-- Logo alineado a la izquierda -->
+                            <img src="img/logotipo.png" alt="Logo HUMNT"
+                                style="width: 80px; margin-bottom: 1.5rem; display: block;" />
+
+                            <h1 class="login-title">Hospital Universitario Manuel Núñez Tovar</h1>
+                            <p class="login-subtitle">Sistema de Gestión de Citas Médicas</p>
+
+                            <form id="login-form" class="login-form" autocomplete="off">
+                                <div class="login-field">
+                                    <label class="login-label" for="login-username">Usuario</label>
+                                    <input class="login-input" type="text" id="login-username"
+                                        placeholder="Ingrese su usuario" required value="mvalero" />
+                                </div>
+                                <div class="login-field">
+                                    <label class="login-label" for="login-password">Contraseña</label>
+                                    <div class="auth-pw-wrap">
+                                        <input class="login-input" type="password" id="login-password"
+                                            placeholder="Ingrese su contraseña" required value="admin123"
+                                            style="padding-right:2.5rem;" />
+                                        <button type="button" class="auth-eye" id="eye-login" tabindex="-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button type="button" class="login-submit-btn" id="btn-login-submit">INICIAR
+                                    SESIÓN</button>
+                            </form>
+
+                            <div class="login-recover" style="margin-top: 1rem; text-align: center;">
+                                <a href="#" id="recover-link"
+                                    style="color: var(--themePrimary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">¿Olvidó
+                                    su contraseña? Recuperar acceso</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recovery Modal Overlay -->
+                <div id="recover-modal-overlay" class="auth-modal-overlay" style="display:none;">
+                    <div class="auth-modal" id="recover-modal-box">
+                        <button class="auth-modal-close" id="recover-modal-close" style="color: var(--red);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                        </button>
+                        <div id="recover-modal-body"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISTA: INICIO -->
+            <div id="view-home" class="view">
+                <div class="section-title">Próxima Cita</div>
+                <div id="next-appointment-slot"></div>
+
+                <div class="section-title">
+                    Resumen Agenda
+                    <a href="#" class="see-all" data-view-target="agenda">Ver todas</a>
+                </div>
+                <div class="agenda-list" id="home-agenda-list"></div>
+            </div>
+
+            <!-- VISTA: HISTORIA CLÍNICA / PACIENTES -->
+            <div id="view-patients" class="view">
+                <div class="section-title">Historia Clínica Electrónica</div>
+                <div id="clinical-root"></div>
+            </div>
+
+            <!-- VISTA: AGENDA -->
+            <div id="view-agenda" class="view">
+                <div class="section-title">Agenda Completa</div>
+                <div class="agenda-list" id="full-agenda-list"></div>
+            </div>
+
+            <!-- VISTA: MENSAJES -->
+            <div id="view-messages" class="view">
+                <div class="section-title">Comunicaciones</div>
+                <div id="messages-list"></div>
+            </div>
+
+            <!-- VISTA: PERFIL -->
+            <div id="view-profile" class="view">
+                <div class="section-title">Mi Perfil Profesional</div>
+                <div class="form-container" id="profile-form-container"></div>
+            </div>
+
+            <!-- VISTA: DISPONIBILIDAD -->
+            <div id="view-availability" class="view">
+                <div class="section-title">Horarios y Capacidad</div>
+                <div class="form-container" id="availability-form-container"></div>
+            </div>
+
+            <!-- VISTA: CONSULTA DETALLADA -->
+            <div id="view-consultation" class="view">
+                <div class="section-title">
+                    <button class="btn-back" onclick="app.navigate('home')"><i
+                            class="fa-solid fa-arrow-left"></i></button>
+                    Atención Médica
+                </div>
+                <div id="consultation-form-area"></div>
+            </div>
+
+            <!-- VISTA: TRIAJE -->
+            <div id="view-triaje" class="view">
+                <div class="section-title">Triaje</div>
+                <div id="triaje-root"></div>
+            </div>
+
+            <!-- VISTA: TRATAMIENTOS -->
+            <div id="view-treatments" class="view">
+                <div class="section-title">Tratamientos y Relevo</div>
+                <div id="treatments-root"></div>
+            </div>
+
+            <!-- VISTA: NUEVA CITA -->
+            <div id="view-new-appointment" class="view">
+                <div class="section-title">
+                    <button class="btn-back" onclick="app.navigate('my-appointments')">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    Nueva Cita
+                </div>
+                <div class="form-container" id="new-appointment-form-container"></div>
+            </div>
+
+            <!-- VISTA: MIS CITAS -->
+            <div id="view-my-appointments" class="view">
+                <div class="section-title">Mis Citas</div>
+                <div id="my-appointments-tabs" class="appt-tabs">
+                    <button class="appt-tab active" data-filter="all">Todas</button>
+                    <button class="appt-tab" data-filter="scheduled">Pendientes</button>
+                    <button class="appt-tab" data-filter="completed">Atendidas</button>
+                    <button class="appt-tab" data-filter="cancelled">Canceladas</button>
+                </div>
+                <div class="agenda-list" id="my-appointments-list"></div>
+            </div>
+
+        </div>
+
+        <!-- Sidebar Menu (diseño idéntico a la versión web) -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Logo institucional (mismo que la barra lateral web) -->
+            <div class="sidebar-header">
+                <div class="sidebar-logo-block">
+                    <img src="img/logotipo_blanco.png" alt="HUMNT"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <span class="logo-text" style="display:none;">HUMNT</span>
+                    <span class="logo-text">HUMNT</span>
+                </div>
+                <!-- Info del Doctor -->
+                <div class="sidebar-user-block">
+                    <div class="profile-img large" id="sidebar-doctor-img"></div>
+                    <div class="sidebar-user-info">
+                        <h3 id="sidebar-doctor-name">Doctor</h3>
+                        <p id="sidebar-doctor-spec">Especialidad</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegación principal -->
+            <nav class="sidebar-nav">
+                <span class="sidebar-section-label">Principal</span>
+                <a href="#" class="sidebar-item" data-view="home">
+                    <i class="fa-solid fa-house"></i> Inicio
+                </a>
+                <a href="#" class="sidebar-item" data-view="patients">
+                    <i class="fa-solid fa-hospital-user"></i> Mis Pacientes
+                </a>
+                <a href="#" class="sidebar-item" data-view="agenda">
+                    <i class="fa-regular fa-calendar-days"></i> Agenda
+                </a>
+
+                <!-- Acordeón: Citas -->
+                <div class="sidebar-accordion" id="accordion-citas">
+                    <button class="sidebar-accordion-trigger" id="accordion-citas-btn">
+                        <span style="display:flex;align-items:center;gap:14px;">
+                            <i class="fa-solid fa-calendar-plus"></i>
+                            Citas
+                        </span>
+                        <i class="fa-solid fa-chevron-right accordion-chevron" id="accordion-citas-chevron"></i>
+                    </button>
+                    <div class="sidebar-accordion-content" id="accordion-citas-content">
+                        <a href="#" class="sidebar-item sidebar-sub-item" data-view="new-appointment">
+                            <i class="fa-solid fa-circle-plus"></i> Nueva Cita
+                        </a>
+                        <a href="#" class="sidebar-item sidebar-sub-item" data-view="my-appointments">
+                            <i class="fa-solid fa-list-check"></i> Mis Citas
+                        </a>
+                    </div>
+                </div>
+
+                <a href="#" class="sidebar-item" data-view="triaje">
+                    <i class="fa-solid fa-notes-medical"></i> Triaje
+                </a>
+                <a href="#" class="sidebar-item" data-view="treatments">
+                    <i class="fa-solid fa-pills"></i> Tratamientos
+                </a>
+
+                <hr class="sidebar-divider">
+                <span class="sidebar-section-label">Mi Cuenta</span>
+
+                <a href="#" class="sidebar-item" data-view="profile">
+                    <i class="fa-solid fa-user-doctor"></i> Configurar Perfil
+                </a>
+                <a href="#" class="sidebar-item" data-view="availability">
+                    <i class="fa-solid fa-clock"></i> Horarios y Cupos
+                </a>
+
+                <hr class="sidebar-divider">
+                <span class="sidebar-section-label">Comunicaciones</span>
+
+                <a href="#" class="sidebar-item" data-view="messages">
+                    <i class="fa-solid fa-bell"></i> Notificaciones
+                </a>
+            </nav>
+
+            <!-- Footer: Cerrar sesión (igual que .sidebar-footer + .logout-btn web) -->
+            <div class="sidebar-footer">
+                <a href="#" class="sidebar-item logout" onclick="location.reload(); return false;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                </a>
+            </div>
+        </aside>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="javascript:void(0)" class="nav-item active" data-view="home">
+                <i class="fa-solid fa-house"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="javascript:void(0)" class="nav-item" data-view="patients">
+                <i class="fa-solid fa-hospital-user"></i>
+                <span>Pacientes</span>
+            </a>
+            <a href="javascript:void(0)" class="nav-item" data-view="agenda">
+                <i class="fa-regular fa-calendar-days"></i>
+                <span>Agenda</span>
+            </a>
+            <a href="javascript:void(0)" class="nav-item" data-view="triaje">
+                <i class="fa-solid fa-notes-medical"></i>
+                <span>Triaje</span>
+            </a>
+            <a href="javascript:void(0)" class="nav-item" data-view="treatments">
+                <i class="fa-solid fa-pills"></i>
+                <span>Trat.</span>
+            </a>
+        </nav>
+
+        <!-- Modals & Sheets -->
+        <div class="overlay" id="overlay"></div>
+        <div class="bottom-sheet" id="bottomSheet">
+            <div class="drag-handle"></div>
+            <div class="sheet-header">
+                <div class="patient-avatar" id="sheet-avatar"></div>
+                <div>
+                    <h3 id="sheet-patient-name">Paciente</h3>
+                    <p id="sheet-patient-id">ID: ---</p>
+                </div>
+            </div>
+            <div class="sheet-content" id="sheet-content">
+                <div class="info-card">
+                    <h4>Motivo de Consulta</h4>
+                    <p id="sheet-reason">---</p>
+                </div>
+                <div class="info-card">
+                    <h4>Antecedentes / Alergias</h4>
+                    <div id="sheet-allergies">---</div>
+                </div>
+                <div class="info-card">
+                    <h4>Últimos Signos</h4>
+                    <ul style="list-style: none;" id="sheet-vitals">
+                        <li>---</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="action-row">
+                <button class="btn-outline" onclick="app.closeSheet()">Cerrar</button>
+                <button class="btn-primary" style="flex: 2;" onclick="app.startConsultation()">
+                    Atender Ahora
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Architecture: ES Modules -->
+    <script type="module" src="js/main.js"></script>
+</body>
+
+</html>
