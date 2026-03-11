@@ -257,14 +257,16 @@ export function mountTreatments(root, { store, user }) {
             if (type === 'treatment') {
                 dynContainer.innerHTML = `
                     <div style="display:flex; flex-direction:column; gap:10px;">
-                        <input type="text" id="f-proc" class="input" placeholder="Procedimiento (ej: Curación)" style="background:#fff;">
-                        <input type="text" id="f-region" class="input" placeholder="Región (ej: Brazo Izquierdo)" style="background:#fff;">
+                        <input type="text" id="f-proc" class="input" placeholder="Procedimiento (ej: Curación, Fisioterapia)" style="background:#fff;">
+                        <input type="text" id="f-region" class="input" placeholder="Región/Área corporal" style="background:#fff;">
+                        <input type="text" id="f-mats" class="input" placeholder="Materiales utilizados" style="background:#fff;">
                         <select id="f-resp" class="input" style="background:#fff;">
                             <option value="">Respuesta del Paciente</option>
                             <option>Tolerancia Buena</option>
                             <option>Tolerancia Regular</option>
                             <option>Mala Tolerancia</option>
                         </select>
+                        <input type="text" id="f-comps" class="input" placeholder="Complicaciones observadas..." style="background:#fff;">
                     </div>
                 `;
             } else if (type === 'medication') {
@@ -278,11 +280,15 @@ export function mountTreatments(root, { store, user }) {
                                 ${ROUTES.map(r => `<option>${r}</option>`).join('')}
                             </select>
                         </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <input type="text" id="f-freq" class="input" placeholder="Frecuencia (ej: c/8h)" style="background:#fff;">
+                            <input type="time" id="f-time" class="input" style="background:#fff;">
+                        </div>
                     </div>
                 `;
             } else if (type === 'vitals') {
                 dynContainer.innerHTML = `
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
                         <div>
                             <label style="font-size:0.65rem; font-weight:700;">PA (mmHg)</label>
                             <input type="text" id="f-pa" class="input" placeholder="120/80" style="background:#fff;">
@@ -292,12 +298,20 @@ export function mountTreatments(root, { store, user }) {
                             <input type="number" id="f-fc" class="input" placeholder="72" style="background:#fff;">
                         </div>
                         <div>
+                            <label style="font-size:0.65rem; font-weight:700;">FR (rpm)</label>
+                            <input type="number" id="f-fr" class="input" placeholder="16" style="background:#fff;">
+                        </div>
+                        <div>
                             <label style="font-size:0.65rem; font-weight:700;">Temp (°C)</label>
                             <input type="number" step="0.1" id="f-temp" class="input" placeholder="36.5" style="background:#fff;">
                         </div>
                         <div>
                             <label style="font-size:0.65rem; font-weight:700;">SpO2 (%)</label>
                             <input type="number" id="f-spo2" class="input" placeholder="98" style="background:#fff;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.65rem; font-weight:700;">Glucemia</label>
+                            <input type="number" id="f-gluc" class="input" placeholder="mg/dL" style="background:#fff;">
                         </div>
                     </div>
                 `;
@@ -332,26 +346,52 @@ export function mountTreatments(root, { store, user }) {
             let detail = '';
             if (!isAmendment) {
                 if (type === 'treatment') {
-                    const proc = overlay.querySelector('#f-proc').value;
-                    const resp = overlay.querySelector('#f-resp').value;
-                    detail = `PROCEDIMIENTO: ${proc || '—'} | RESPUESTA: ${resp || '—'}`;
+                    const proc = overlay.querySelector('#f-proc')?.value;
+                    const reg = overlay.querySelector('#f-region')?.value;
+                    const mats = overlay.querySelector('#f-mats')?.value;
+                    const resp = overlay.querySelector('#f-resp')?.value;
+                    const comps = overlay.querySelector('#f-comps')?.value;
+                    const parts = [];
+                    if (proc) parts.push(`Procedimiento: ${proc}`);
+                    if (reg) parts.push(`Región: ${reg}`);
+                    if (mats) parts.push(`Materiales: ${mats}`);
+                    if (resp) parts.push(`Respuesta: ${resp}`);
+                    if (comps) parts.push(`Complicaciones: ${comps}`);
+                    detail = parts.join(' | ');
                 } else if (type === 'medication') {
-                    const med = overlay.querySelector('#f-med').value;
-                    const dose = overlay.querySelector('#f-dose').value;
-                    const route = overlay.querySelector('#f-route').value;
-                    detail = `MEDICACIÓN: ${med || '—'} | DOSIS: ${dose || '—'} | VÍA: ${route || '—'}`;
+                    const med = overlay.querySelector('#f-med')?.value;
+                    const dose = overlay.querySelector('#f-dose')?.value;
+                    const route = overlay.querySelector('#f-route')?.value;
+                    const freq = overlay.querySelector('#f-freq')?.value;
+                    const time = overlay.querySelector('#f-time')?.value;
+                    const parts = [];
+                    if (med) parts.push(`Medicamento: ${med}`);
+                    if (dose) parts.push(`Dosis: ${dose}`);
+                    if (route) parts.push(`Vía: ${route}`);
+                    if (freq) parts.push(`Frecuencia: ${freq}`);
+                    if (time) parts.push(`Hora: ${time}`);
+                    detail = parts.join(' | ');
                 } else if (type === 'vitals') {
-                    const pa = overlay.querySelector('#f-pa').value;
-                    const fc = overlay.querySelector('#f-fc').value;
-                    const t = overlay.querySelector('#f-temp').value;
-                    const s = overlay.querySelector('#f-spo2').value;
-                    detail = `SIGNOS: ${pa ? 'PA:' + pa : ''} ${fc ? 'FC:' + fc : ''} ${t ? 'T:' + t : ''} ${s ? 'SpO2:' + s : ''}`.trim();
+                    const pa = overlay.querySelector('#f-pa')?.value;
+                    const fc = overlay.querySelector('#f-fc')?.value;
+                    const t = overlay.querySelector('#f-temp')?.value;
+                    const s = overlay.querySelector('#f-spo2')?.value;
+                    const fr = overlay.querySelector('#f-fr')?.value;
+                    const gl = overlay.querySelector('#f-gluc')?.value;
+                    const parts = [];
+                    if (pa) parts.push(`T/A: ${pa} mmHg`);
+                    if (fc) parts.push(`FC: ${fc} lpm`);
+                    if (fr) parts.push(`FR: ${fr} rpm`);
+                    if (t) parts.push(`Temp: ${t}°C`);
+                    if (s) parts.push(`SpO₂: ${s}%`);
+                    if (gl) parts.push(`Gluc: ${gl} mg/dL`);
+                    detail = parts.join(' | ');
                 }
             } else {
                 detail = `ENMIENDA AL REGISTRO (#${amendingLog.id.substring(5)}): ${note}`;
             }
 
-            if (note && !isAmendment) detail += (detail ? ' | OBSERVACIÓN: ' : '') + note;
+            if (note && !isAmendment) detail += (detail ? ' | NOTA/OBS: ' : '') + note;
 
             const entry = {
                 id: 'tlog_' + Date.now(),

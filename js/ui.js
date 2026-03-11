@@ -47,14 +47,16 @@ export function updateStatsUI(stats, unreadNotifications) {
 
 export function showToast(msg, color = '#003b69') {
     const el = document.createElement('div');
-    el.style.cssText = `position:fixed;bottom:82px;left:50%;transform:translateX(-50%);
-        padding:10px 20px;border-radius:20px;background:${color};color:#fff;
-        font-size:0.8rem;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.25);
-        opacity:0;transition:opacity .3s;`;
-    el.textContent = msg;
+    el.style.cssText = `position:fixed;top:20px;right:20px;max-width:calc(100vw - 40px);
+        padding:1rem 1.5rem;border-radius:8px;background:${color};color:#fff;
+        font-size:0.85rem;font-weight:600;z-index:999999;box-shadow:0 10px 15px -3px rgba(0,0,0,.15);
+        display:flex;align-items:center;gap:0.75rem;
+        transform:translateX(120%);opacity:0;transition:transform 0.3s ease, opacity 0.3s ease;`;
+    el.innerHTML = msg;
     document.body.appendChild(el);
-    setTimeout(() => el.style.opacity = '1', 10);
+    setTimeout(() => { el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }, 10);
     setTimeout(() => {
+        el.style.transform = 'translateX(120%)';
         el.style.opacity = '0';
         setTimeout(() => el.remove(), 300);
     }, 2800);
@@ -192,7 +194,7 @@ export function renderAgendaView(appointments, store) {
             </div>
             <div class="item-details">
                 <h4>${patient?.name || '—'}</h4>
-                <p>${apt.reason} &nbsp;•&nbsp; ${apt.modality === 'virtual' ? '🎥 Virtual' : '🏥 Presencial'}</p>
+                <p>${apt.reason} &nbsp;•&nbsp; ${apt.modality === 'virtual' ? '<i class="fa-solid fa-video" style="color:var(--themePrimary);"></i> Virtual' : '<i class="fa-solid fa-hospital" style="color:var(--themePrimary);"></i> Presencial'}</p>
             </div>
             <div class="status-dot" style="background-color:${statusColor};"></div>
         `;
@@ -375,39 +377,41 @@ export function renderProfileView(user, roleRecord, onSave) {
 
     // 3. Firma Digital (Simple Canvas Drawing)
     const canvas = document.getElementById('signature-canvas');
-    const ctx = canvas.getContext('2d');
-    let drawing = false;
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
 
-    // Ajustar resolución del canvas
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+        // Ajustar resolución del canvas
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
 
-    const getPos = (e) => {
-        const t = e.touches ? e.touches[0] : e;
-        const r = canvas.getBoundingClientRect();
-        return { x: t.clientX - r.left, y: t.clientY - r.top };
-    };
+        const getPos = (e) => {
+            const t = e.touches ? e.touches[0] : e;
+            const r = canvas.getBoundingClientRect();
+            return { x: t.clientX - r.left, y: t.clientY - r.top };
+        };
 
-    const start = (e) => { drawing = true; ctx.beginPath(); ctx.moveTo(getPos(e).x, getPos(e).y); e.preventDefault(); };
-    const move = (e) => { if (drawing) { const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); } e.preventDefault(); };
-    const stop = () => { drawing = false; document.getElementById('signature-data').value = canvas.toDataURL(); };
+        const start = (e) => { drawing = true; ctx.beginPath(); ctx.moveTo(getPos(e).x, getPos(e).y); e.preventDefault(); };
+        const move = (e) => { if (drawing) { const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); } e.preventDefault(); };
+        const stop = () => { drawing = false; document.getElementById('signature-data').value = canvas.toDataURL(); };
 
-    ctx.strokeStyle = '#002d4f';
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
+        ctx.strokeStyle = '#002d4f';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
 
-    canvas.addEventListener('mousedown', start);
-    canvas.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', stop);
-    canvas.addEventListener('touchstart', start);
-    canvas.addEventListener('touchmove', move);
-    canvas.addEventListener('touchend', stop);
+        canvas.addEventListener('mousedown', start);
+        canvas.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', stop);
+        canvas.addEventListener('touchstart', start);
+        canvas.addEventListener('touchmove', move);
+        canvas.addEventListener('touchend', stop);
 
-    document.getElementById('btn-clear-sig').onclick = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        document.getElementById('signature-data').value = "";
-    };
+        document.getElementById('btn-clear-sig').onclick = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('signature-data').value = "";
+        };
+    }
 
     // Form Submit
     document.getElementById('profile-form').onsubmit = (e) => {
@@ -800,8 +804,8 @@ export function renderNewAppointmentView(patients, doctors, currentDoctor, onSav
                 <div class="form-group">
                     <label>Tipo de Consulta *</label>
                     <select id="apt-modality" name="modality">
-                        <option value="presential">🏥 Presencial</option>
-                        <option value="virtual">🎥 Virtual / Telemedicina</option>
+                        <option value="presential">Presencial en Clínica</option>
+                        <option value="virtual">Virtual / Telemedicina</option>
                     </select>
                 </div>
                 <div class="form-group" id="apt-link-group" style="display:none;">
@@ -1037,7 +1041,7 @@ export function renderMyAppointmentsView(appointments, store, currentFilter, onF
                         <div style="font-size:0.75rem;color:var(--neutralSecondary);">
                             ${patient?.docType || ''}-${patient?.dni || '—'} 
                             &nbsp;•&nbsp; 
-                            ${apt.modality === 'virtual' ? '🎥 Virtual' : '🏥 Presencial'}
+                            ${apt.modality === 'virtual' ? '<i class="fa-solid fa-video" style="color:var(--neutralSecondary);"></i> Virtual' : '<i class="fa-solid fa-hospital" style="color:var(--neutralSecondary);"></i> Presencial'}
                         </div>
                     </div>
                 </div>
@@ -1094,7 +1098,7 @@ export function renderMyAppointmentsView(appointments, store, currentFilter, onF
             }[apt.status] || apt.status;
 
             alert([
-                `📋 DETALLE DE CITA`,
+                `DETALLE DE CITA`,
                 `———————————————`,
                 `Paciente: ${patient.name}`,
                 `DNI: ${patient.docType}-${patient.dni}`,

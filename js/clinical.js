@@ -46,12 +46,19 @@ function fmtDateTime(ts) {
 
 function showToast(msg, color = 'var(--neutralDark)') {
     const el = document.createElement('div');
-    el.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-        padding:10px 20px;border-radius:20px;background:${color};color:#fff;
-        font-size:0.8rem;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.25);`;
-    el.textContent = msg;
+    el.style.cssText = `position:fixed;top:20px;right:20px;max-width:calc(100vw - 40px);
+        padding:1rem 1.5rem;border-radius:8px;background:${color};color:#fff;
+        font-size:0.85rem;font-weight:600;z-index:999999;box-shadow:0 10px 15px -3px rgba(0,0,0,.15);
+        display:flex;align-items:center;gap:0.75rem;
+        transform:translateX(120%);opacity:0;transition:transform 0.3s ease, opacity 0.3s ease;`;
+    el.innerHTML = msg;
     document.body.appendChild(el);
-    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 2500);
+    setTimeout(() => { el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }, 10);
+    setTimeout(() => {
+        el.style.transform = 'translateX(120%)';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+    }, 2800);
 }
 
 // ─── FUNCIÓN PRINCIPAL ────────────────────────────────────────────────────────
@@ -199,7 +206,7 @@ export function mountClinical(root, { store, user, onPrintPrescription }) {
                             CI: ${p.docType || 'V'}-${p.dni || '—'} · ${age} años
                         </span>
                         ${p.bloodType ? `<span style="font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(220,38,38,.1);color:#dc2626;">${p.bloodType}</span>` : ''}
-                        ${hasAllergy ? `<span style="font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,.1);color:#d97706;">⚠ Alergias</span>` : ''}
+                        ${hasAllergy ? `<span style="font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(245,158,11,.1);color:#d97706;"><i class="fa-solid fa-triangle-exclamation"></i> Alergias</span>` : ''}
                     </div>
                 </div>
                 <div style="text-align:right;flex-shrink:0;">
@@ -653,7 +660,7 @@ export function mountClinical(root, { store, user, onPrintPrescription }) {
         const dateEl = document.getElementById('rf-date');
         const diagEl = document.getElementById('rf-diagnosis');
         if (!dateEl?.value || !diagEl?.value.trim()) {
-            showToast('⚠️ Diagnóstico y fecha son obligatorios', 'var(--red)');
+            showToast('<i class="fa-solid fa-triangle-exclamation"></i> Diagnóstico y fecha son obligatorios', 'var(--red)');
             return false;
         }
 
@@ -695,10 +702,10 @@ export function mountClinical(root, { store, user, onPrintPrescription }) {
 
         if (state.editingRecord) {
             store.update('clinicalRecords', state.editingRecord.id, data);
-            showToast('✅ Registro actualizado', 'var(--green)');
+            showToast('<i class="fa-solid fa-check"></i> Registro actualizado', 'var(--green)');
         } else {
             store.add('clinicalRecords', data);
-            showToast('✅ Registro guardado', 'var(--green)');
+            showToast('<i class="fa-solid fa-check"></i> Registro guardado', 'var(--green)');
         }
         state.editingRecord = null;
         render(); // Actualizar KPIs de la lista
@@ -786,17 +793,17 @@ export function mountClinical(root, { store, user, onPrintPrescription }) {
                 // --- SIGNOS VITALES ---
                 fill(0, 51, 102);
                 doc.rect(margin, y, cW, 8, 'F');
-                doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255);
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255, 255, 255);
                 doc.text('SIGNOS VITALES Y EVALUACIÓN FÍSICA', margin + 5, y + 5.5);
                 y += 8;
 
                 const vData = [
-                    { l: 'P. Arterial', v: vt.bloodPressure || '—' },
-                    { l: 'F. Cardíaca', v: (vt.heartRate || '—') + ' lpm' },
-                    { l: 'Temp.', v: (vt.temperature || '—') + ' °C' },
-                    { l: 'Sat. O2', v: (vt.spo2 || '—') + ' %' },
-                    { l: 'Peso', v: (vt.weight || '—') + ' kg' },
-                    { l: 'F. Resp.', v: (vt.respiratoryRate || '—') + ' rpm' }
+                    { l: 'P. Arterial', v: vt.bloodPressure ? String(vt.bloodPressure) : '—' },
+                    { l: 'F. Cardíaca', v: vt.heartRate ? String(vt.heartRate) + ' lpm' : '—' },
+                    { l: 'Temp.', v: vt.temperature ? String(vt.temperature) + ' °C' : '—' },
+                    { l: 'Sat. O2', v: vt.spo2 ? String(vt.spo2) + ' %' : '—' },
+                    { l: 'Peso', v: vt.weight ? String(vt.weight) + ' kg' : '—' },
+                    { l: 'F. Resp.', v: vt.respiratoryRate ? String(vt.respiratoryRate) + ' rpm' : '—' }
                 ];
 
                 doc.setFontSize(8); txt(0, 0, 0);
@@ -845,12 +852,18 @@ export function mountClinical(root, { store, user, onPrintPrescription }) {
                     doc.text('PRESCRIPCIONES MÉDICAS (RECETA)', margin + 5, y + 5);
                     y += 10;
                     doc.setFont('helvetica', 'normal'); txt(0, 0, 0);
-                    record.prescriptions.forEach((px, i) => {
-                        const pText = `${i + 1}. ${px.medication} — ${px.dosage} — ${px.frequency} (${px.duration})`;
-                        const pxLines = doc.splitTextToSize(pText, cW - 10);
+                    if (Array.isArray(record.prescriptions)) {
+                        record.prescriptions.forEach((px, i) => {
+                            const pText = `${i + 1}. ${px.medication} — ${px.dosage} — ${px.frequency} (${px.duration})`;
+                            const pxLines = doc.splitTextToSize(pText, cW - 10);
+                            doc.text(pxLines, margin + 5, y);
+                            y += (pxLines.length * 5) + 3;
+                        });
+                    } else if (typeof record.prescriptions === 'string') {
+                        const pxLines = doc.splitTextToSize(record.prescriptions, cW - 10);
                         doc.text(pxLines, margin + 5, y);
                         y += (pxLines.length * 5) + 3;
-                    });
+                    }
                     y += 10;
                 }
 
@@ -865,15 +878,18 @@ export function mountClinical(root, { store, user, onPrintPrescription }) {
                 doc.text(respName, pW / 2, y + 6, { align: 'center' });
                 doc.setFontSize(8); doc.setFont('helvetica', 'normal'); txt(100, 100, 100);
                 doc.text(dr?.specialty || 'Medicina General', pW / 2, y + 11, { align: 'center' });
-                if (dr?.license) doc.text(`MPPS: ${dr.license} / CMS: ${dr.license.slice(-5)}`, pW / 2, y + 16, { align: 'center' });
+                if (dr?.license) {
+                    const licStr = String(dr.license);
+                    doc.text(`MPPS: ${licStr} / CMS: ${licStr.slice(-5)}`, pW / 2, y + 16, { align: 'center' });
+                }
             });
 
             const fname = `HC_HUMNT_${p.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
             doc.save(fname);
-            showToast('✅ Historia Clínica exportada correctamente', 'var(--green)');
+            showToast('<i class="fa-solid fa-check"></i> Historia Clínica exportada correctamente', 'var(--green)');
         } catch (e) {
             console.error(e);
-            showToast('❌ Error al generar PDF', 'var(--red)');
+            showToast('<i class="fa-solid fa-circle-xmark"></i> Error al generar PDF', 'var(--red)');
         }
     }
 

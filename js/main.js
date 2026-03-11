@@ -331,56 +331,48 @@ class HospitalApp {
             };
         }
 
-        const resetBtn = document.getElementById('force-reset-link');
-        if (resetBtn) {
-            resetBtn.onclick = (e) => {
+
+
+        const form = document.getElementById('login-form');
+        if (form) {
+            form.onsubmit = (e) => {
                 e.preventDefault();
-                if (confirm('¿Forzar actualización de datos?\nSe cerrará la sesión y se restaurarán los valores por defecto.')) {
-                    localStorage.clear();
-                    window.location.reload();
+                const userIn = document.getElementById('login-username').value;
+                const passIn = document.getElementById('login-password').value;
+
+                if (userIn && passIn) {
+                    btn.innerHTML = 'Validando...';
+                    btn.disabled = true;
+
+                    setTimeout(async () => {
+                        const users = this.store.get('users');
+                        const found = users.find(u => u.username === userIn && u.password === passIn);
+
+                        if (found) {
+                            this.user = found;
+                            if (this.user.role === 'doctor') {
+                                const doctors = this.store.get('doctors');
+                                this.doctorRecord = doctors.find(d => d.id === this.user.doctorId) || doctors[0];
+                                this.nurseRecord = null;
+                            } else if (this.user.role === 'nurse') {
+                                const nurses = this.store.get('nurses');
+                                this.nurseRecord = nurses.find(n => n.id === this.user.nurseId) || nurses[0];
+                                this.doctorRecord = null;
+                            }
+
+                            this.setupNavigation();
+                            this.setupSidebar();
+                            await this.refreshAll();
+                            this.navigate('home');
+                        } else {
+                            alert('Credenciales inválidas. Intente con daruiz / demo123 o esoler / demo123');
+                            btn.innerHTML = 'INICIAR SESIÓN';
+                            btn.disabled = false;
+                        }
+                    }, 1000);
                 }
             };
         }
-
-        btn.onclick = () => {
-            const userIn = document.getElementById('login-username').value;
-            const passIn = document.getElementById('login-password').value;
-
-            // Validación básica para prototipo
-            if (userIn && passIn) {
-                // Simular carga
-                btn.innerHTML = 'Validando...';
-                btn.disabled = true;
-
-                setTimeout(async () => {
-                    const users = this.store.get('users');
-                    const found = users.find(u => u.username === userIn && u.password === passIn);
-
-                    if (found) {
-                        this.user = found;
-
-                        if (this.user.role === 'doctor') {
-                            const doctors = this.store.get('doctors');
-                            this.doctorRecord = doctors.find(d => d.id === this.user.doctorId) || doctors[0];
-                            this.nurseRecord = null;
-                        } else if (this.user.role === 'nurse') {
-                            const nurses = this.store.get('nurses');
-                            this.nurseRecord = nurses.find(n => n.id === this.user.nurseId) || nurses[0];
-                            this.doctorRecord = null;
-                        }
-
-                        this.setupNavigation();
-                        this.setupSidebar();
-                        await this.refreshAll();
-                        this.navigate('home');
-                    } else {
-                        alert('Credenciales inválidas. Intente con daruiz / demo123 o esoler / demo123');
-                        btn.innerText = 'INGRESAR AL SISTEMA';
-                        btn.disabled = false;
-                    }
-                }, 1000);
-            }
-        };
     }
 
     renderPatients() {
@@ -472,7 +464,7 @@ class HospitalApp {
             // 3. Notificar y refrescar UI
             UI.renderHeader(this.user, this.doctorRecord || this.nurseRecord);
             UI.showToast('Perfil actualizado correctamente');
-            alert(`✅ Perfil de ${data.name} actualizado con éxito.`);
+            alert(`Perfil de ${data.name} actualizado con éxito.`);
         });
     }
 
@@ -491,7 +483,7 @@ class HospitalApp {
                 this.doctorRecord = updated;
 
                 UI.showToast('Configuración de agenda guardada');
-                alert(`✅ Agenda actualizada:\n• Jornada: ${data.workStartHour}:00 – ${data.workEndHour}:00\n• Cupos: ${data.dailyCapacity} pacientes/día\n• Días: ${data.schedule}`);
+                alert(`Agenda actualizada:\n• Jornada: ${data.workStartHour}:00 – ${data.workEndHour}:00\n• Cupos: ${data.dailyCapacity} pacientes/día\n• Días: ${data.schedule}`);
             }
         });
     }
@@ -529,7 +521,7 @@ class HospitalApp {
             // Marcar la cita como finalizada
             this.store.update('appointments', this.currentAppointmentId, { status: 'finalized' });
 
-            if (confirm('✅ Consulta guardada exitosamente. ¿Desea descargar la receta médica PDF ahora?')) {
+            if (confirm('Consulta guardada exitosamente. ¿Desea descargar la receta médica PDF ahora?')) {
                 generatePrescriptionPDF(data, this.doctorRecord, this.currentPatient);
             }
 
@@ -552,7 +544,7 @@ class HospitalApp {
                 const dt = new Date(newApt.dateTime);
                 const dateStr = dt.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
                 const timeStr = dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                alert(`✅ Cita registrada para el ${dateStr} a las ${timeStr}.`);
+                alert(`Cita registrada para el ${dateStr} a las ${timeStr}.`);
                 this.navigate('my-appointments');
             }
         });

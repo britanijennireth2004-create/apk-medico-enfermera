@@ -115,14 +115,16 @@ body {
 
 .header-top {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
+    gap: 35px;
 }
 
 .profile-section {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex: 1;
 }
 
 .profile-img {
@@ -160,6 +162,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-left: auto;
 }
 
 .badge {

@@ -5,15 +5,15 @@ export async function createStore(bus) {
 
   // Datos de ejemplo más completos
   const defaultData = {
-    version: 'APK-1.3',
+    version: 'APK-1.4',
     users: [
       {
         id: 'user_daruiz',
         username: 'daruiz',
         password: 'demo123',
         role: 'doctor',
-        name: 'Dr. Manuel Valero',
-        email: 'manuel.valero@hospital.com',
+        name: 'Dra. Ana Ruiz',
+        email: 'ana.ruiz@hospital.com',
         doctorId: 'd_1',
         isActive: true,
         createdAt: Date.now()
@@ -95,15 +95,15 @@ export async function createStore(bus) {
     doctors: [
       {
         id: 'd_1',
-        name: 'Dr. Manuel Valero',
-        specialty: 'Medicina General',
-        subspecialties: ['Nutrición Clínica'],
-        healthSystemNumber: 'MPPS-45678',
-        hireDate: '2020-05-15',
+        name: 'Dra. Ana Ruiz',
+        specialty: 'Medicina Interna',
+        subspecialties: ['Gastroenterología'],
+        healthSystemNumber: 'MPPS-12345',
+        hireDate: '2018-10-01',
         contractType: 'Fijo',
         areaId: 'area_1',
-        license: 'MG-12345',
-        email: 'mvalero@hospital.com',
+        license: 'LICENSE-1234',
+        email: 'ana.ruiz@hospital.com',
         phone: '555-0201',
         schedule: 'Lun-Vie 8:00-16:00',
         workStartHour: 8,

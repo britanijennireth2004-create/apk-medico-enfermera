@@ -158,13 +158,13 @@ export async function generatePrescriptionPDF(data, doctor, patient) {
         doc.save(fileName);
 
         if (typeof window.UI !== 'undefined') {
-            window.UI.showToast('✅ Receta descargada con éxito', 'var(--green)');
+            window.UI.showToast('<i class="fa-solid fa-check"></i> Receta descargada con éxito', 'var(--green)');
         }
 
     } catch (e) {
         console.error("Error PDF:", e);
         if (typeof window.UI !== 'undefined') {
-            window.UI.showToast('❌ Error al generar la receta', 'var(--red)');
+            window.UI.showToast('<i class="fa-solid fa-circle-xmark"></i> Error al generar la receta', 'var(--red)');
         }
     }
 }

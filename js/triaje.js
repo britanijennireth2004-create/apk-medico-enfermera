@@ -40,12 +40,19 @@ function waitStr(ms) {
 
 function showToast(msg, color = '#003b69') {
     const el = document.createElement('div');
-    el.style.cssText = `position:fixed;bottom:82px;left:50%;transform:translateX(-50%);
-        padding:10px 20px;border-radius:20px;background:${color};color:#fff;
-        font-size:0.8rem;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.25);`;
-    el.textContent = msg;
+    el.style.cssText = `position:fixed;top:20px;right:20px;max-width:calc(100vw - 40px);
+        padding:1rem 1.5rem;border-radius:8px;background:${color};color:#fff;
+        font-size:0.85rem;font-weight:600;z-index:999999;box-shadow:0 10px 15px -3px rgba(0,0,0,.15);
+        display:flex;align-items:center;gap:0.75rem;
+        transform:translateX(120%);opacity:0;transition:transform 0.3s ease, opacity 0.3s ease;`;
+    el.innerHTML = msg;
     document.body.appendChild(el);
-    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 2800);
+    setTimeout(() => { el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }, 10);
+    setTimeout(() => {
+        el.style.transform = 'translateX(120%)';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+    }, 2800);
 }
 
 /**
@@ -137,7 +144,7 @@ export function mountTriaje(root, { store, user }) {
             { label: 'En Atención', val: all.filter(r => r.status === 'in_progress').length, icon: 'fa-stethoscope', color: 'var(--teal)' },
             { label: 'Completados', val: all.filter(r => r.status === 'completed').length, icon: 'fa-circle-check', color: 'var(--green)' },
             { label: 'Espera Prom.', val: `${avgWait}m`, icon: 'fa-clock', color: 'var(--neutralSecondary)' },
-            { label: '🔴 Críticos', val: waiting.filter(r => r.priority === 'red').length, icon: 'fa-circle-exclamation', color: '#dc2626' }
+            { label: 'Críticos', val: waiting.filter(r => r.priority === 'red').length, icon: 'fa-circle-exclamation', color: '#dc2626' }
         ];
         return kpis.map(k => `
             <div style="background:#fff;border-radius:10px;padding:10px 12px;border:1px solid var(--neutralLight);
@@ -178,14 +185,14 @@ export function mountTriaje(root, { store, user }) {
                                 white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.fullName}</div>
                     <div style="font-size:0.68rem;color:var(--neutralSecondary);">
                         ${r.age} años · ${r.bloodType}
-                        ${r.allergies.length ? `<span style="color:#d97706;"> · ⚠ Alergias</span>` : ''}
+                        ${r.allergies.length ? `<span style="color:#d97706;"> · <i class="fa-solid fa-triangle-exclamation"></i> Alergias</span>` : ''}
                     </div>
                 </div>
                 <div style="text-align:right;flex-shrink:0;">
                     <div style="font-size:0.65rem;font-weight:700;padding:2px 7px;border-radius:10px;
                                 background:${lv.bg};color:${lv.color};white-space:nowrap;margin-bottom:3px;">${lv.name.split('—')[0].trim()}</div>
                     <div style="font-size:0.62rem;color:${waitColor};font-weight:${r.waiting > 3600000 ? '800' : '600'};">
-                        ${statusMap[r.status] || r.status} · ⏱${wait}${r.waiting > 3600000 ? ' ⚠️' : ''}
+                        ${statusMap[r.status] || r.status} · <i class="fa-solid fa-clock"></i> ${wait}${r.waiting > 3600000 ? ' <i class="fa-solid fa-triangle-exclamation" style="color:#dc2626;"></i>' : ''}
                     </div>
                 </div>
             </div>
@@ -205,35 +212,35 @@ export function mountTriaje(root, { store, user }) {
                 ${r.vitalSigns.spo2 ? `<div style="font-size:0.65rem;"><b>SpO₂</b> ${r.vitalSigns.spo2}%</div>` : ''}
             </div>` : ''}
             <!-- Acciones -->
-            <div style="display:flex;gap:6px;">
+            <div style="display:flex;gap:6px;justify-content:flex-end;">
                 ${r.status === 'waiting' ? `
-                <button class="tj-btn-attend" data-id="${r.id}"
-                    style="flex:1;background:var(--teal);color:#fff;border:none;border-radius:8px;
-                           padding:8px;font-size:0.78rem;font-weight:600;cursor:pointer;">
-                    <i class="fa-solid fa-stethoscope"></i> Atender
+                <button class="tj-btn-attend" data-id="${r.id}" title="Atender"
+                    style="background:var(--teal);color:#fff;border:none;border-radius:8px;
+                           padding:8px 14px;font-size:0.95rem;cursor:pointer;">
+                    <i class="fa-solid fa-stethoscope"></i>
                 </button>` : ''}
                 ${r.status === 'in_progress' ? `
-                <button class="tj-btn-complete" data-id="${r.id}"
-                    style="flex:1;background:var(--green);color:#fff;border:none;border-radius:8px;
-                           padding:8px;font-size:0.78rem;font-weight:600;cursor:pointer;">
-                    <i class="fa-solid fa-circle-check"></i> Completar
+                <button class="tj-btn-complete" data-id="${r.id}" title="Completar"
+                    style="background:var(--green);color:#fff;border:none;border-radius:8px;
+                           padding:8px 14px;font-size:0.95rem;cursor:pointer;">
+                    <i class="fa-solid fa-circle-check"></i>
                 </button>` : ''}
                 <button class="tj-btn-view" data-id="${r.id}"
                     style="background:var(--neutralLighterAlt,#f2f2f2);color:var(--neutralPrimary);
-                           border:1px solid var(--neutralLight);border-radius:8px;padding:8px 12px;
-                           font-size:0.78rem;cursor:pointer;" title="Ver Detalle">
+                           border:1px solid var(--neutralLight);border-radius:8px;padding:8px 14px;
+                           font-size:0.95rem;cursor:pointer;" title="Ver Detalle">
                     <i class="fa-solid fa-eye"></i>
                 </button>
                 <button class="tj-btn-print-ind" data-id="${r.id}"
                     style="background:var(--neutralLighterAlt,#f2f2f2);color:var(--themePrimary);
-                           border:1px solid var(--neutralLight);border-radius:8px;padding:8px 12px;
-                           font-size:0.78rem;cursor:pointer;" title="Imprimir Reporte">
+                           border:1px solid var(--neutralLight);border-radius:8px;padding:8px 14px;
+                           font-size:0.95rem;cursor:pointer;" title="Imprimir Reporte">
                     <i class="fa-solid fa-print"></i>
                 </button>
                 ${r.status !== 'completed' ? `
                 <button class="tj-btn-cancel" data-id="${r.id}"
                     style="background:rgba(220,38,38,.08);color:#dc2626;border:1px solid rgba(220,38,38,.2);
-                           border-radius:8px;padding:8px 12px;font-size:0.78rem;cursor:pointer;">
+                           border-radius:8px;padding:8px 14px;font-size:0.95rem;cursor:pointer;" title="Cancelar">
                     <i class="fa-solid fa-ban"></i>
                 </button>` : ''}
             </div>
@@ -359,7 +366,7 @@ export function mountTriaje(root, { store, user }) {
             if (!completed.length) { showToast('No hay registros para limpiar', '#64748b'); return; }
             if (confirm(`¿Eliminar ${completed.length} registro(s) completado(s)/cancelado(s)?`)) {
                 completed.forEach(r => store.remove?.('triaje', r.id));
-                showToast(`✅ ${completed.length} registro(s) eliminado(s)`, 'var(--green)');
+                showToast(`<i class="fa-solid fa-check"></i> ${completed.length} registro(s) eliminado(s)`, 'var(--green)');
                 render();
             }
         });
@@ -375,7 +382,7 @@ export function mountTriaje(root, { store, user }) {
         root.querySelectorAll('.tj-btn-complete').forEach(btn => {
             btn.addEventListener('click', () => {
                 store.update('triaje', btn.dataset.id, { status: 'completed', completedAt: Date.now() });
-                showToast('✅ Atención completada', 'var(--green)');
+                showToast('<i class="fa-solid fa-check"></i> Atención completada', 'var(--green)');
                 render();
             });
         });
@@ -731,7 +738,7 @@ export function mountTriaje(root, { store, user }) {
             const docType = overlay.querySelector('#tj-new-doc-type').value;
 
             if (!name || !dni || !birth || !phone) {
-                showToast('⚠️ Complete los campos obligatorios del paciente (*)', '#dc2626');
+                showToast('<i class="fa-solid fa-triangle-exclamation"></i> Complete los campos obligatorios del paciente (*)', '#dc2626');
                 return false;
             }
 
@@ -754,13 +761,13 @@ export function mountTriaje(root, { store, user }) {
             patientId = overlay.querySelector('#tj-patient-id')?.value;
         }
 
-        if (!patientId) { showToast('⚠️ Identifique al paciente', '#dc2626'); return false; }
+        if (!patientId) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Identifique al paciente', '#dc2626'); return false; }
 
         const symptoms = overlay.querySelector('#tj-symptoms')?.value.trim();
         const priority = overlay.querySelector('#tj-priority-selected')?.value;
 
-        if (!symptoms) { showToast('⚠️ Ingrese los síntomas', '#dc2626'); return false; }
-        if (!priority) { showToast('⚠️ Seleccione una prioridad', '#dc2626'); return false; }
+        if (!symptoms) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Ingrese los síntomas', '#dc2626'); return false; }
+        if (!priority) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Seleccione una prioridad', '#dc2626'); return false; }
 
         store.add('triaje', {
             patientId, priority, symptoms,
@@ -779,7 +786,7 @@ export function mountTriaje(root, { store, user }) {
             creatorName: user?.name || ''
         });
 
-        showToast('✅ Triaje registrado', LEVELS[priority].color);
+        showToast('<i class="fa-solid fa-check"></i> Triaje registrado', LEVELS[priority].color);
         render();
         return true;
     }
@@ -802,15 +809,15 @@ export function mountTriaje(root, { store, user }) {
         const symptoms = overlay.querySelector('#tj-symptoms')?.value.trim();
         const priority = overlay.querySelector('#tj-priority-selected')?.value;
 
-        if (!patientId) { showToast('⚠️ Seleccione un paciente', '#dc2626'); return false; }
-        if (!symptoms) { showToast('⚠️ Ingrese los síntomas', '#dc2626'); return false; }
-        if (!priority) { showToast('⚠️ Seleccione una prioridad', '#dc2626'); return false; }
+        if (!patientId) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Seleccione un paciente', '#dc2626'); return false; }
+        if (!symptoms) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Ingrese los síntomas', '#dc2626'); return false; }
+        if (!priority) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Seleccione una prioridad', '#dc2626'); return false; }
 
         // Verificar si ya está en cola (status waiting/in_progress)
         const existing = (store.get('triaje') || []).find(r =>
             r.patientId === patientId && ['waiting', 'in_progress'].includes(r.status)
         );
-        if (existing) { showToast('⚠️ Paciente ya está en la cola de triaje', '#d97706'); return false; }
+        if (existing) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Paciente ya está en la cola de triaje', '#d97706'); return false; }
 
         store.add('triaje', {
             patientId,
@@ -831,7 +838,7 @@ export function mountTriaje(root, { store, user }) {
             creatorName: user?.name || ''
         });
 
-        showToast('✅ Triaje registrado', LEVELS[priority].color);
+        showToast('<i class="fa-solid fa-check"></i> Triaje registrado', LEVELS[priority].color);
         render();
         return true;
     }
@@ -1003,7 +1010,7 @@ export function mountTriaje(root, { store, user }) {
                 const newPriority = btn.dataset.priority;
                 if (newPriority === rec.priority) return;
                 store.update('triaje', btn.dataset.recId, { priority: newPriority });
-                showToast(`🔄 Prioridad cambiada a ${LEVELS[newPriority].name}`, LEVELS[newPriority].color);
+                showToast(`<i class="fa-solid fa-rotate"></i> Prioridad cambiada a ${LEVELS[newPriority].name}`, LEVELS[newPriority].color);
                 closeDetail();
                 render();
             });
@@ -1020,7 +1027,7 @@ export function mountTriaje(root, { store, user }) {
         // Completar desde detalle
         overlay.querySelector('#tj-detail-complete')?.addEventListener('click', e => {
             store.update('triaje', e.target.closest('button').dataset.id, { status: 'completed', completedAt: Date.now() });
-            showToast('✅ Atención completada', 'var(--green)');
+            showToast('<i class="fa-solid fa-check"></i> Atención completada', 'var(--green)');
             closeDetail();
             render();
         });
@@ -1139,7 +1146,7 @@ export function mountTriaje(root, { store, user }) {
             const type = overlay.querySelector('#tj-emg-type')?.value;
             const location = overlay.querySelector('#tj-emg-location')?.value.trim();
             const desc = overlay.querySelector('#tj-emg-desc')?.value.trim();
-            if (!location) { showToast('⚠️ Indique la ubicación', '#dc2626'); return; }
+            if (!location) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Indique la ubicación', '#dc2626'); return; }
 
             // Registrar la emergencia en el store
             const typeLabels = {
@@ -1152,7 +1159,7 @@ export function mountTriaje(root, { store, user }) {
             };
             store.add?.('notifications', {
                 type: 'emergency',
-                title: '🚨 ALERTA DE EMERGENCIA — ' + (typeLabels[type] || type),
+                title: `<i class="fa-solid fa-bell" style="color:#dc2626"></i> ALERTA DE EMERGENCIA — ` + (typeLabels[type] || type),
                 body: `Ubicación: ${location}` + (desc ? `\n${desc}` : ''),
                 from: user?.id || '',
                 fromName: user?.name || 'Sistema',
@@ -1177,13 +1184,13 @@ export function mountTriaje(root, { store, user }) {
                 justify-content:center;gap:10px;animation:emergency-flash 1s infinite;`;
             banner.innerHTML = `
                 <i class="fa-solid fa-bell" style="font-size:1.1rem;"></i>
-                ⚠️ ${typeLabels[type] || type} — ${location}
+                <i class="fa-solid fa-triangle-exclamation"></i> ${typeLabels[type] || type} — ${location}
                 <button onclick="this.parentElement.remove()"
                     style="margin-left:12px;background:rgba(255,255,255,.2);border:none;border-radius:8px;
                            color:#fff;padding:4px 12px;cursor:pointer;font-size:0.78rem;">Desactivar</button>`;
             document.body.prepend(banner);
 
-            showToast('🔴 Alerta de emergencia activada', '#dc2626');
+            showToast('<i class="fa-solid fa-circle"></i> Alerta de emergencia activada', '#dc2626');
             closeEmg();
         });
     }
@@ -1353,10 +1360,10 @@ export function mountTriaje(root, { store, user }) {
             doc.text('Sistema de Gestión Hospitalaria HUMNT - 2026', pW / 2, 290, { align: 'center' });
 
             doc.save(`INFORME_TRIAJE_${(p?.name || 'PACIENTE').replace(/\s+/g, '_').toUpperCase()}.pdf`);
-            showToast('✅ Reporte generado', 'var(--green)');
+            showToast('<i class="fa-solid fa-check"></i> Reporte generado', 'var(--green)');
         } catch (e) {
             console.error(e);
-            showToast('❌ Error al generar reporte', '#dc2626');
+            showToast('<i class="fa-solid fa-circle-xmark"></i> Error al generar reporte', '#dc2626');
         }
     }
 
@@ -1491,10 +1498,10 @@ export function mountTriaje(root, { store, user }) {
             }
 
             doc.save(`REPORTE_TRIAJE_CONSOLIDADO_${new Date().toISOString().split('T')[0]}.pdf`);
-            showToast('✅ Reporte consolidado generado', 'var(--green)');
+            showToast('<i class="fa-solid fa-check"></i> Reporte consolidado generado', 'var(--green)');
         } catch (e) {
             console.error(e);
-            showToast('❌ Error al generar PDF', '#dc2626');
+            showToast('<i class="fa-solid fa-circle-xmark"></i> Error al generar PDF', '#dc2626');
         }
     }
 

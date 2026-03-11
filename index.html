@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Modular Styles -->
     <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Evitar error 404 de favicon -->
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23e53e3e%22><path d=%22M19,13H13v6h-2v-6H5v-2h6V5h2v6h6V13z%22/></svg>">
 </head>
 
 <body>
@@ -97,20 +101,16 @@
                                     </div>
                                 </div>
 
-                                <button type="button" class="login-submit-btn" id="btn-login-submit">INICIAR
+                                <button type="submit" class="login-submit-btn" id="btn-login-submit">INICIAR
                                     SESIÓN</button>
                             </form>
 
-                            <div class="login-recover"
-                                style="margin-top: 1rem; text-align: center; display: flex; flex-direction: column; gap: 10px;">
+                            <div class="login-recover" style="margin-top: 1rem; text-align: center;">
                                 <a href="#" id="recover-link"
                                     style="color: var(--themePrimary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">¿Olvidó
                                     su contraseña? Recuperar acceso</a>
 
-                                <a href="#" id="force-reset-link"
-                                    style="color: var(--neutralSecondary); text-decoration: none; font-size: 0.75rem; opacity: 0.7;">
-                                    <i class="fa-solid fa-arrows-rotate"></i> Forzar actualización de datos
-                                </a>
+
                             </div>
                         </div>
                     </div>

@@ -300,8 +300,8 @@ export function mountNewAppointmentForm({ store, doctorRecord, user, onSave }) {
             <div class="form-group">
                 <label>Tipo de Consulta *</label>
                 <select id="apt-modality" name="modality">
-                    <option value="presential">🏥 Presencial</option>
-                    <option value="virtual">🎥 Virtual / Telemedicina</option>
+                    <option value="presential">Presencial en Clínica</option>
+                    <option value="virtual">Virtual / Telemedicina</option>
                 </select>
             </div>
             <div class="form-group" id="apt-link-group" style="display:none;">
@@ -711,7 +711,7 @@ export function renderMyAppointmentsView(appointments, store, currentFilter, onF
                         <div style="font-size:0.73rem;color:var(--neutralSecondary);margin-top:2px;">
                             ${patient?.docType || '?'}-${patient?.dni || '—'}
                             &nbsp;•&nbsp;
-                            ${apt.modality === 'virtual' ? '🎥 Virtual' : '🏥 Presencial'}
+                            ${apt.modality === 'virtual' ? '<i class="fa-solid fa-video" style="color:var(--neutralSecondary);"></i> Virtual' : '<i class="fa-solid fa-hospital" style="color:var(--neutralSecondary);"></i> Presencial'}
                             ${area ? '&nbsp;•&nbsp;' + area.name : ''}
                         </div>
                     </div>
@@ -728,15 +728,15 @@ export function renderMyAppointmentsView(appointments, store, currentFilter, onF
             </div>` : ''}
             <div style="display:flex;gap:8px;padding-left:68px;flex-wrap:wrap;">
                 ${apt.modality === 'virtual' && apt.virtualLink ? `
-                <a href="${apt.virtualLink}" target="_blank" class="apt-action-btn apt-action-virtual">
-                    <i class="fa-solid fa-video"></i> Unirse
+                <a href="${apt.virtualLink}" target="_blank" class="apt-action-btn apt-action-virtual" title="Unirse a Telemedicina" style="padding: 8px 12px;">
+                    <i class="fa-solid fa-video" style="font-size:1.1rem;"></i>
                 </a>` : ''}
                 ${canCancel ? `
-                <button class="apt-action-btn apt-action-cancel" data-id="${apt.id}">
-                    <i class="fa-solid fa-ban"></i> Cancelar
+                <button class="apt-action-btn apt-action-cancel" data-id="${apt.id}" title="Cancelar cita" style="padding: 8px 12px;">
+                    <i class="fa-solid fa-ban" style="font-size:1.1rem;"></i>
                 </button>` : ''}
-                <button class="apt-action-btn apt-action-detail" data-id="${apt.id}">
-                    <i class="fa-solid fa-eye"></i> Ver detalle
+                <button class="apt-action-btn apt-action-detail" data-id="${apt.id}" title="Ver detalle de cita" style="padding: 8px 12px;">
+                    <i class="fa-solid fa-eye" style="font-size:1.1rem;"></i>
                 </button>
             </div>
         `;

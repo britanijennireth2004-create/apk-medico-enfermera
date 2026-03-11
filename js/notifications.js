@@ -146,9 +146,10 @@ export function mountNotifications(root, { store, user }) {
             if (i.createdBy === user?.id) return true;
             if (i.recipientId === user?.id ||
                 (user?.doctorId && i.recipientId === user.doctorId) ||
-                i.recipientRole === role) return true;
-            if (i._src === 'notifications') return true;
-            if (i._src === 'reminders' && (i.recipientId === user?.doctorId || i.recipientId === user?.id)) return true;
+                (user?.patientId && i.recipientId === user.patientId) ||
+                (user?.nurseId && i.recipientId === user.nurseId) ||
+                (user?.receptionistId && i.recipientId === user.receptionistId)) return true;
+            if (i.recipientRole === role) return true;
             return false;
         });
     }
@@ -222,15 +223,15 @@ export function mountNotifications(root, { store, user }) {
                 </button>
             </div>
             <!-- Tabs de carpetas (scroll horizontal) -->
-            <div id="notif-folders" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;">
+            <div id="notif-folders" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;">
                 ${FOLDERS.map(f => `
-                <button class="notif-folder-tab ${f.id === state.folder ? 'active' : ''}" data-folder="${f.id}"
-                    style="display:flex;align-items:center;gap:5px;white-space:nowrap;
+                <button class="notif-folder-tab ${f.id === state.folder ? 'active' : ''}" data-folder="${f.id}" title="${f.label}"
+                    style="display:flex;align-items:center;justify-content:center;flex-shrink:0;
                            border:1px solid ${f.id === state.folder ? 'var(--themePrimary)' : 'var(--neutralLight)'};
                            background:${f.id === state.folder ? 'var(--themePrimary)' : '#fff'};
                            color:${f.id === state.folder ? '#fff' : 'var(--neutralSecondary)'};
-                           border-radius:20px;padding:6px 12px;font-size:0.75rem;font-weight:600;cursor:pointer;">
-                    <i class="fa-solid ${f.icon}" style="font-size:0.7rem;"></i> ${f.label}
+                           border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;">
+                    <i class="fa-solid ${f.icon}"></i>
                 </button>`).join('')}
             </div>
             <!-- Buscador -->
@@ -284,34 +285,26 @@ export function mountNotifications(root, { store, user }) {
             row.dataset.id = item.id;
             row.className = `notif-msg-row ${isUnread ? 'unread' : ''}`;
             row.style.cssText = `
-                display:flex; align-items:flex-start; gap:14px; padding:15px;
-                border-radius:14px; background:#fff; border:1px solid ${isUnread ? 'var(--themePrimary)' : 'var(--neutralLighter)'};
+                display:flex; align-items:center; gap:12px; padding:12px 14px;
+                background:${isUnread ? 'rgba(0,120,180,0.03)' : '#fff'}; border-bottom:1px solid var(--neutralLighter);
                 cursor:pointer; position:relative; overflow:hidden;
-                box-shadow: ${isUnread ? '0 4px 12px rgba(0,59,105,0.08)' : 'none'};
             `;
 
             row.innerHTML = `
-                <div class="notif-actor-avatar" style="background:${ac};">
+                ${isUnread ? '<div style="position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--themePrimary);"></div>' : ''}
+                <div class="notif-actor-avatar" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.1rem;flex-shrink:0;background:${ac};">
                     ${initial}
                 </div>
-                <div style="flex:1;min-width:0;">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-                        <span style="font-size:0.85rem; font-weight:${isUnread ? '800' : '600'}; color:var(--neutralPrimary);
-                                     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;">${sender}</span>
-                        <span style="font-size:0.65rem; color:var(--neutralSecondary);">${fmtDate(item.createdAt)}</span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:2px;">
+                        <span style="font-size:0.9rem; font-weight:${isUnread ? '800' : '600'}; color:${isDraft ? '#b45309' : 'var(--neutralPrimary)'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sender}</span>
+                        <span style="font-size:0.75rem; color:${isUnread ? 'var(--themePrimary)' : 'var(--neutralSecondary)'}; font-weight:${isUnread ? '700' : 'normal'}; flex-shrink:0;">${fmtDate(item.createdAt)}</span>
                     </div>
-                    <div style="font-size:0.9rem; font-weight:${isUnread ? '700' : '500'}; color:var(--neutralDark);
-                                white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:4px 0;">${item.title || '(sin asunto)'}</div>
-                    <div style="font-size:0.75rem; color:var(--neutralSecondary); line-height:1.4; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">
-                        ${(item.content || '').replace(/\n/g, ' ')}
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
-                        ${chBadge(item.channel)}
-                        ${item.priority && item.priority !== 'normal' ? prBadge(item.priority) : ''}
-                        ${isDraft ? '<span style="font-size:0.62rem;font-weight:800;padding:2px 8px;border-radius:10px;color:#92400e;background:#fef3c7;text-transform:uppercase;">Borrador</span>' : ''}
+                    <div style="display:flex;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">
+                        <span style="font-size:0.85rem; font-weight:${isUnread ? '700' : '600'}; color:var(--neutralDark); flex-shrink:0;">${item.title || '(sin asunto)'}</span>
+                        <span style="font-size:0.85rem; color:var(--neutralSecondary); margin-left:4px; overflow:hidden; text-overflow:ellipsis;">— ${(item.content || '').replace(/\n/g, ' ')}</span>
                     </div>
                 </div>
-                ${isUnread ? '<div style="position:absolute; top:15px; right:8px; width:10px; height:10px; border-radius:50%; background:var(--themePrimary); border:2px solid #fff;"></div>' : ''}
             `;
             row.addEventListener('click', () => {
                 markRead(item.id);
@@ -345,69 +338,65 @@ export function mountNotifications(root, { store, user }) {
                 <button id="detail-back" style="background:var(--neutralLighterAlt);border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;color:var(--themePrimary);display:flex;align-items:center;justify-content:center;">
                     <i class="fa-solid fa-arrow-left"></i>
                 </button>
-                <div style="flex:1;">
-                    <div style="font-size:0.7rem;font-weight:700;color:var(--neutralPrimary);text-transform:uppercase;letter-spacing:0.03em;">Detalle del Mensaje</div>
-                    <div style="font-size:0.65rem;color:var(--neutralSecondary);">${fmtFull(item.createdAt)}</div>
-                </div>
-                <div style="display:flex; gap:8px;">
-                    ${!isDraft ? `
-                    <button data-action="star" data-id="${item.id}"
-                        style="background:#fff;border:1px solid var(--neutralLight);width:36px;height:36px;border-radius:10px;cursor:pointer;color:${item.starred ? '#f59e0b' : 'var(--neutralTertiaryAlt)'};">
-                        <i class="fa-${item.starred ? 'solid' : 'regular'} fa-star"></i>
-                    </button>` : ''}
+                <div style="flex:1;"></div>
+                <div style="display:flex; gap:12px;">
                     <button data-action="delete-detail" data-id="${item.id}"
-                        style="background:#fff;border:1px solid #fee2e2;width:36px;height:36px;border-radius:10px;cursor:pointer;color:var(--red);">
+                        style="background:transparent;border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;color:var(--neutralTertiaryAlt);font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:color 0.2s;">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
+                    ${!isDraft ? `
+                    <button data-action="star" data-id="${item.id}"
+                        style="background:transparent;border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;color:${item.starred ? '#f59e0b' : 'var(--neutralTertiaryAlt)'};font-size:1.1rem;display:flex;align-items:center;justify-content:center;">
+                        <i class="fa-${item.starred ? 'solid' : 'regular'} fa-star"></i>
+                    </button>` : ''}
                 </div>
             </div>
 
-            <!-- Cabecera Premium -->
-            <div style="background:#fff; border-radius:16px; border:1px solid var(--neutralLighter); padding:15px; margin-bottom:15px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
-                <div style="display:flex;gap:15px;align-items:center;">
-                    <div class="notif-actor-avatar" style="background:${ac}; width:50px; height:50px;">
-                        ${senderName.charAt(0).toUpperCase()}
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                         <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <span style="font-size:0.95rem;font-weight:800;color:var(--neutralDark);">${senderName}</span>
-                         </div>
-                         <div style="font-size:0.75rem;color:var(--neutralSecondary); margin-top:2px;">
-                            Para: <span style="font-weight:600; color:var(--neutralPrimary);">${item.recipientName || '—'}</span>
-                         </div>
-                    </div>
+            <!-- Cabecera estilo Web -->
+            <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:20px;padding:0 8px;">
+                <div class="notif-actor-avatar" style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.25rem;color:white;flex-shrink:0;transform:rotate(-2deg);box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);background:${ac};">
+                    ${senderName.charAt(0).toUpperCase()}
                 </div>
-                <div style="margin-top:15px; padding-top:12px; border-top:1px dashed var(--neutralLighter); display:flex; gap:8px;">
-                     ${chBadge(item.channel)} ${prBadge(item.priority)}
+                <div style="flex:1;min-width:0;">
+                     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                         <h3 style="margin:0;font-size:1.15rem;color:var(--neutralDark);font-weight:600;">${item.title || '(sin asunto)'}</h3>
+                         ${chBadge(item.channel)} ${prBadge(item.priority)}
+                     </div>
+                     <div style="font-size:0.8rem;color:var(--neutralSecondary);display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                        <strong style="color:var(--neutralPrimary);">${senderName}</strong>
+                        <span>→</span>
+                        <span>${item.recipientName || '—'}</span>
+                     </div>
+                     <div style="font-size:0.75rem;color:var(--neutralSecondary);margin-top:6px;">${fmtFull(item.createdAt)}</div>
                 </div>
             </div>
-
-            <!-- Asunto y Cuerpo -->
-            <div style="margin-bottom:20px;">
-                <h2 style="font-size:1.15rem; font-weight:800; color:var(--neutralDark); margin-bottom:12px;">${item.title || '(sin asunto)'}</h2>
-                <div style="font-size:0.95rem; color:var(--neutralDark); line-height:1.8; white-space:pre-wrap;
-                            background:#fff; border-radius:16px; border:1px solid var(--neutralLighter); padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
-                    ${item.content || 'Sin contenido.'}
-                </div>
+            
+            <!-- Cuerpo estilo Web -->
+            <div style="font-size:0.95rem;color:var(--neutralDark);line-height:1.75;white-space:pre-wrap;padding:0 8px 20px;">
+                ${item.content || 'Sin contenido'}
             </div>
 
             ${item.appointmentId ? `
-            <div style="margin-bottom:16px;padding:10px 14px;background:var(--themeLighterAlt,#eff5f9);border-left:3px solid var(--themePrimary);border-radius:0 8px 8px 0;font-size:0.78rem;color:var(--themeDark);">
-                <i class="fa-solid fa-calendar-check"></i> Cita vinculada: ${item.appointmentId}
+            <div style="margin:0 8px 20px;padding:12px 16px;background:var(--themeLighterAlt,#eff5f9);border-left:3px solid var(--themePrimary);border-radius:0 8px 8px 0;font-size:0.85rem;color:var(--themeDark);">
+                <strong>Cita vinculada:</strong> ${item.appointmentId}
             </div>` : ''}
 
-            <!-- Acciones -->
+            <!-- Acciones Estilo Web -->
             ${isDraft ? `
-            <button id="edit-draft-btn" data-id="${item.id}"
-                style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
-                       background:var(--yellow);color:#fff;border:none;border-radius:10px;padding:13px;font-weight:700;cursor:pointer;">
-                <i class="fa-solid fa-pen-to-square"></i> Editar borrador
-            </button>` : `
-            <button id="reply-btn"
-                style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
-                       background:var(--themePrimary);color:#fff;border:none;border-radius:10px;padding:13px;font-weight:700;cursor:pointer;">
-                <i class="fa-solid fa-reply"></i> Responder
-            </button>`}
+            <div style="margin:20px 8px 0;padding-top:20px;border-top:1px solid var(--neutralLighter);">
+                <button id="edit-draft-btn" data-id="${item.id}"
+                    style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;
+                           background:var(--themePrimary);color:#fff;border:none;border-radius:24px;font-weight:600;cursor:pointer;box-shadow:0 4px 10px rgba(0,120,180,0.3);width:fit-content;">
+                    <i class="fa-solid fa-pen-to-square"></i> Editar borrador
+                </button>
+            </div>` : `
+            <div style="margin:20px 8px 0;padding-top:20px;border-top:1px solid var(--neutralLighter);">
+                <button id="reply-btn"
+                    style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;
+                           background:var(--themePrimary);color:#fff;border:none;border-radius:24px;font-weight:600;cursor:pointer;box-shadow:0 4px 10px rgba(0,120,180,0.3);width:fit-content;">
+                    <i class="fa-solid fa-reply"></i> Responder
+                </button>
+            </div>`}
         `;
         return wrap;
     }
@@ -563,10 +552,10 @@ export function mountNotifications(root, { store, user }) {
     function sendMessage(form) {
         const toEl = form.querySelector('#cmp-to');
         const val = toEl.value.trim();
-        if (!val) { showToast('⚠️ Seleccione un destinatario'); return; }
+        if (!val) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Seleccione un destinatario'); return; }
         const subj = form.querySelector('#cmp-subj').value.trim();
         const body = form.querySelector('#cmp-body').value.trim();
-        if (!subj || !body) { showToast('⚠️ Complete asunto y mensaje'); return; }
+        if (!subj || !body) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Complete asunto y mensaje'); return; }
 
         const isRole = val.startsWith('role_');
         const name = isRole
@@ -595,7 +584,7 @@ export function mountNotifications(root, { store, user }) {
         if (state.editingDraftId) store.remove('drafts', state.editingDraftId);
         state.view = 'list'; state.replyTo = null; state.editingDraftId = null;
         render();
-        showToast('✅ Mensaje enviado correctamente');
+        showToast('<i class="fa-solid fa-check"></i> Mensaje enviado correctamente');
     }
 
     function saveDraft(form) {
@@ -620,17 +609,24 @@ export function mountNotifications(root, { store, user }) {
         else store.add('drafts', data);
         state.view = 'list'; state.replyTo = null; state.editingDraftId = null;
         render();
-        showToast('💾 Borrador guardado');
+        showToast('<i class="fa-solid fa-floppy-disk"></i> Borrador guardado');
     }
 
     function showToast(msg) {
         const el = document.createElement('div');
-        el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);' +
-            'padding:10px 20px;border-radius:20px;background:var(--neutralDark);color:#fff;' +
-            'font-size:0.8rem;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2);';
-        el.textContent = msg;
+        el.style.cssText = `position:fixed;top:20px;right:20px;max-width:calc(100vw - 40px);
+            padding:1rem 1.5rem;border-radius:8px;background:var(--neutralDark);color:#fff;
+            font-size:0.85rem;font-weight:600;z-index:999999;box-shadow:0 10px 15px -3px rgba(0,0,0,.15);
+            display:flex;align-items:center;gap:0.75rem;
+            transform:translateX(120%);opacity:0;transition:transform 0.3s ease, opacity 0.3s ease;`;
+        el.innerHTML = msg;
         document.body.appendChild(el);
-        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 2500);
+        setTimeout(() => { el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }, 10);
+        setTimeout(() => {
+            el.style.transform = 'translateX(120%)';
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 300);
+        }, 2800);
     }
 
     // ── BIND ──────────────────────────────────────────────────────────────────
