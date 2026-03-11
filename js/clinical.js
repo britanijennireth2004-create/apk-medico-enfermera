@@ -56,7 +56,7 @@ function showToast(msg, color = 'var(--neutralDark)') {
 
 // ─── FUNCIÓN PRINCIPAL ────────────────────────────────────────────────────────
 
-export function mountClinical(root, { store, user }) {
+export function mountClinical(root, { store, user, onPrintPrescription }) {
     if (!root) return;
 
     const state = {
@@ -132,15 +132,13 @@ export function mountClinical(root, { store, user }) {
 
             <!-- Buscador + orden -->
             <div style="background:#fff;border-radius:12px;border:1px solid var(--neutralLight);padding:10px 12px;margin-bottom:10px;">
-                <div style="position:relative;margin-bottom:8px;">
-                    <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--neutralSecondary);font-size:0.78rem;"></i>
-                    <input id="cl-search" type="text" placeholder="Buscar por nombre, cédula, teléfono..." value="${state.search}"
-                           style="width:100%;padding:9px 12px 9px 30px;border-radius:20px;border:1px solid var(--neutralLight);
-                                  font-size:0.82rem;box-sizing:border-box;background:var(--neutralLighterAlt,#f8f8f8);">
+                <div class="search-input-wrap" style="margin-bottom:8px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="cl-search" type="text" placeholder="Buscar por nombre, cédula, teléfono..." value="${state.search}">
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <span style="font-size:0.72rem;color:var(--neutralSecondary);font-weight:600;">Ordenar:</span>
-                    <select id="cl-sort" style="border:1px solid var(--neutralLight);border-radius:8px;padding:4px 8px;font-size:0.78rem;background:#fff;flex:1;">
+                    <select id="cl-sort" class="select-compact" style="flex:1;">
                         <option value="name"   ${state.sortBy === 'name' ? 'selected' : ''}>Nombre A-Z</option>
                         <option value="age"    ${state.sortBy === 'age' ? 'selected' : ''}>Mayor edad</option>
                         <option value="recent" ${state.sortBy === 'recent' ? 'selected' : ''}>Más recientes</option>
@@ -342,6 +340,17 @@ export function mountClinical(root, { store, user }) {
         overlay.querySelector('#hc-btn-pdf')?.addEventListener('click', () => {
             generatePDF(getPatientRecords(patientId), p);
         });
+
+        // Manejar clics en botones de receta PDF dentro del timeline
+        overlay.querySelector('#hc-timeline')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-prescription-pdf');
+            if (btn && typeof onPrintPrescription === 'function') {
+                const recordId = btn.dataset.recordId;
+                const record = store.find('clinicalRecords', recordId);
+                const dr = store.find('doctors', record.doctorId);
+                onPrintPrescription(record, dr, p);
+            }
+        });
     }
 
     function closeHCSheet(overlay) {
@@ -437,6 +446,13 @@ export function mountClinical(root, { store, user }) {
                             <div style="font-size:0.63rem;font-weight:700;color:var(--neutralSecondary);text-transform:uppercase;margin-bottom:3px;">Notas</div>
                             <div style="font-size:0.8rem;">${r.notes}</div>
                         </div>` : ''}
+                    </div>
+                    
+                    <!-- Botones de Acción -->
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="btn-prescription-pdf" data-record-id="${r.id}" style="flex:1; background:var(--themePrimary); color:#fff; border:none; border-radius:10px; padding:10px; font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <i class="fa-solid fa-file-prescription"></i> Generar Receta PDF
+                        </button>
                     </div>
 
                 </div>

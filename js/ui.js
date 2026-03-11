@@ -3,7 +3,7 @@
  */
 import { calculateAge, formatTime, formatDateShort } from './utils.js';
 
-export function renderHeader(user) {
+export function renderHeader(user, record) {
     const nameEl = document.getElementById('header-doctor-name');
     const imgEl = document.getElementById('header-doctor-img');
     const greetingEl = document.getElementById('greeting-text');
@@ -16,8 +16,11 @@ export function renderHeader(user) {
         const sidebarName = document.getElementById('sidebar-doctor-name');
         const sidebarImg = document.getElementById('sidebar-doctor-img');
         const sidebarSpec = document.getElementById('sidebar-doctor-spec');
+
+        const roleLabel = (user.role === 'nurse') ? 'Enfermería' : (user.specialty || 'Médico');
+
         if (sidebarName) sidebarName.textContent = user.name;
-        if (sidebarSpec) sidebarSpec.textContent = user.specialty || 'Médico';
+        if (sidebarSpec) sidebarSpec.textContent = record?.specialty || record?.shift || roleLabel;
         if (sidebarImg) sidebarImg.style.backgroundImage = imgEl.style.backgroundImage;
 
         const hour = new Date().getHours();
@@ -41,6 +44,22 @@ export function updateStatsUI(stats, unreadNotifications) {
         badge.style.display = 'none';
     }
 }
+
+export function showToast(msg, color = '#003b69') {
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;bottom:82px;left:50%;transform:translateX(-50%);
+        padding:10px 20px;border-radius:20px;background:${color};color:#fff;
+        font-size:0.8rem;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.25);
+        opacity:0;transition:opacity .3s;`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.style.opacity = '1', 10);
+    setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+    }, 2800);
+}
+
 
 // ─── INICIO ──────────────────────────────────────────────────────────────────
 export function renderHomeView(appointments, store, onOpenSheet) {
@@ -239,163 +258,477 @@ export function updateBottomSheet(patient, appointment, medicalRecord) {
     document.getElementById('bottomSheet').classList.add('active');
 }
 
-// ─── PERFIL MÉDICO ────────────────────────────────────────────────────────────
-export function renderProfileView(user, doctorRecord, onSave) {
+// ─── PERFIL DE USUARIO (Médico / Enfermería) ──────────────────────────────────
+export function renderProfileView(user, roleRecord, onSave) {
     const container = document.getElementById('profile-form-container');
+    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=eff5f9&color=003b69`;
+    const isNurse = user.role === 'nurse';
+
+    // Sub-especialidades o Áreas (convertir a array si no lo es)
+    let subs = roleRecord?.subspecialties || [];
+    if (typeof subs === 'string') subs = subs.split(',').map(s => s.trim());
+
     container.innerHTML = `
         <form id="profile-form">
+            <!-- Selector de Foto -->
+            <div class="profile-photo-container">
+                <div class="profile-img-preview" id="profile-preview-circle" style="background-image: url('${avatarUrl}')"></div>
+                <button type="button" class="btn-upload" id="btn-change-photo">
+                    <i class="fa-solid fa-camera"></i> Cambiar Foto
+                </button>
+                <input type="file" id="profile-file-input" hidden accept="image/*">
+            </div>
+
             <div class="form-group">
                 <label><i class="fa-solid fa-user" style="color:var(--themePrimary)"></i> &nbsp;Nombre Completo</label>
                 <input type="text" name="name" value="${user.name}" required>
             </div>
+
             <div class="form-group">
                 <label><i class="fa-regular fa-envelope" style="color:var(--themePrimary)"></i> &nbsp;Correo Electrónico</label>
                 <input type="email" name="email" value="${user.email || ''}">
             </div>
+
             <div class="form-group">
                 <label><i class="fa-solid fa-phone" style="color:var(--themePrimary)"></i> &nbsp;Teléfono</label>
-                <input type="tel" name="phone" value="${doctorRecord?.phone || user.phone || ''}">
+                <input type="tel" name="phone" value="${roleRecord?.phone || user.phone || ''}">
             </div>
+
             <div class="form-group">
-                <label><i class="fa-solid fa-stethoscope" style="color:var(--neutralSecondary)"></i> &nbsp;Especialidad</label>
-                <input type="text" value="${user.specialty || '—'}" readonly style="opacity:0.65;">
+                <label><i class="fa-solid ${isNurse ? 'fa-user-nurse' : 'fa- stethoscope'}" style="color:var(--themePrimary)"></i> &nbsp;${isNurse ? 'Cargo / Unidad' : 'Especialidad Principal'}</label>
+                <input type="text" name="specialty" value="${user.specialty || (isNurse ? 'Enfermería General' : 'Medicina General')}">
             </div>
+
+            <!-- Tags de Sub-especialidades / Áreas -->
             <div class="form-group">
-                <label><i class="fa-solid fa-id-card" style="color:var(--neutralSecondary)"></i> &nbsp;Licencia / Colegiado</label>
-                <input type="text" value="${doctorRecord?.license || user.license || '—'}" readonly style="opacity:0.65;">
+                <label><i class="fa-solid fa-tags" style="color:var(--themePrimary)"></i> &nbsp;${isNurse ? 'Habilidades / Áreas' : 'Sub-especialidades / Áreas'}</label>
+                <div class="specialty-tags" id="tags-container">
+                    ${subs.map(s => `
+                        <span class="tag" data-val="${s}">
+                            ${s} <i class="fa-solid fa-xmark tag-remove"></i>
+                        </span>
+                    `).join('')}
+                    <button type="button" class="tag" id="btn-add-tag" style="border:1px dashed var(--themeTertiary); background:none; cursor:pointer;">
+                        <i class="fa-solid fa-plus"></i> Añadir
+                    </button>
+                </div>
             </div>
+
             <div class="form-group">
-                <label><i class="fa-solid fa-hospital" style="color:var(--neutralSecondary)"></i> &nbsp;N° Sistema Salud (MPPS)</label>
-                <input type="text" value="${doctorRecord?.healthSystemNumber || '—'}" readonly style="opacity:0.65;">
+                <label><i class="fa-solid ${isNurse ? 'fa-clock' : 'fa-id-card'}" style="color:var(--neutralSecondary)"></i> &nbsp;${isNurse ? 'Turno Asignado' : 'Licencia / Colegiado'}</label>
+                <input type="text" value="${isNurse ? (roleRecord?.shift || 'Mañana') : (roleRecord?.license || '—')}" readonly style="opacity:0.65;">
             </div>
+
+            ${!isNurse ? `
+            <!-- Firma Digital (Solo Doctores) -->
             <div class="form-group">
-                <label><i class="fa-solid fa-file-contract" style="color:var(--neutralSecondary)"></i> &nbsp;Tipo de Contrato</label>
-                <input type="text" value="${doctorRecord?.contractType || '—'}" readonly style="opacity:0.65;">
+                <label><i class="fa-solid fa-signature" style="color:var(--themePrimary)"></i> &nbsp;Firma Digital (Para Recetas)</label>
+                <div class="signature-pad-container">
+                    <canvas id="signature-canvas" class="signature-canvas"></canvas>
+                    <div class="signature-controls">
+                        <span class="signature-help">Firme dentro del cuadro blanco</span>
+                        <button type="button" class="btn-signature-clear" id="btn-clear-sig">Limpiar</button>
+                    </div>
+                </div>
+                <input type="hidden" name="signature" id="signature-data">
             </div>
-            <button type="submit" class="btn-save">
-                <i class="fa-solid fa-floppy-disk"></i> &nbsp;Guardar Cambios
+            ` : ''}
+
+            <button type="submit" class="btn-save" style="margin-top:20px;">
+                <i class="fa-solid fa-floppy-disk"></i> &nbsp;Guardar Perfil ${isNurse ? 'de Enfermería' : 'Profesional'}
             </button>
         </form>
     `;
+
+    // --- Lógica Interactiva ---
+
+    // 1. Foto
+    const fileInput = document.getElementById('profile-file-input');
+    const preview = document.getElementById('profile-preview-circle');
+    document.getElementById('btn-change-photo').onclick = () => fileInput.click();
+    fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (rl) => preview.style.backgroundImage = `url('${rl.target.result}')`;
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // 2. Tags
+    const tagsWrapper = document.getElementById('tags-container');
+    tagsWrapper.onclick = (e) => {
+        if (e.target.classList.contains('tag-remove')) {
+            e.target.closest('.tag').remove();
+        }
+    };
+    document.getElementById('btn-add-tag').onclick = () => {
+        const val = prompt('Ingrese nueva sub-especialidad o área:');
+        if (val) {
+            const span = document.createElement('span');
+            span.className = 'tag';
+            span.dataset.val = val;
+            span.innerHTML = `${val} <i class="fa-solid fa-xmark tag-remove"></i>`;
+            tagsWrapper.insertBefore(span, document.getElementById('btn-add-tag'));
+        }
+    };
+
+    // 3. Firma Digital (Simple Canvas Drawing)
+    const canvas = document.getElementById('signature-canvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    // Ajustar resolución del canvas
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    const getPos = (e) => {
+        const t = e.touches ? e.touches[0] : e;
+        const r = canvas.getBoundingClientRect();
+        return { x: t.clientX - r.left, y: t.clientY - r.top };
+    };
+
+    const start = (e) => { drawing = true; ctx.beginPath(); ctx.moveTo(getPos(e).x, getPos(e).y); e.preventDefault(); };
+    const move = (e) => { if (drawing) { const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); } e.preventDefault(); };
+    const stop = () => { drawing = false; document.getElementById('signature-data').value = canvas.toDataURL(); };
+
+    ctx.strokeStyle = '#002d4f';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', stop);
+    canvas.addEventListener('touchstart', start);
+    canvas.addEventListener('touchmove', move);
+    canvas.addEventListener('touchend', stop);
+
+    document.getElementById('btn-clear-sig').onclick = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        document.getElementById('signature-data').value = "";
+    };
+
+    // Form Submit
     document.getElementById('profile-form').onsubmit = (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
-        onSave(Object.fromEntries(fd));
+        const data = Object.fromEntries(fd);
+
+        // Recoger tags
+        const tags = Array.from(tagsWrapper.querySelectorAll('.tag[data-val]')).map(t => t.dataset.val);
+        data.subspecialties = tags;
+
+        onSave(data);
     };
 }
+
 
 // ─── DISPONIBILIDAD ───────────────────────────────────────────────────────────
 export function renderAvailabilityView(doctor, onSave) {
     const container = document.getElementById('availability-form-container');
+
+    // Parsear días del horario (Ej: "Lun-Vie" -> [0,1,2,3,4])
+    const daysArr = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const currentSchedule = doctor?.schedule || 'Lun-Vie';
+
     container.innerHTML = `
         <form id="availability-form">
-            <div class="form-group">
-                <label><i class="fa-regular fa-clock" style="color:var(--themePrimary)"></i> &nbsp;Hora de Inicio</label>
-                <input type="number" name="workStartHour" value="${doctor?.workStartHour ?? 8}" min="0" max="23">
+            <div style="background:var(--white); padding:20px; border-radius:16px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                <h4 style="font-size:0.9rem; color:var(--themePrimary); margin-bottom:15px; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-calendar-day"></i> Jornada Laboral
+                </h4>
+                
+                <div class="form-group">
+                    <label>Días de consulta</label>
+                    <div class="days-selector">
+                        ${daysArr.map((d, i) => `
+                            <input type="checkbox" id="day-${i}" class="day-checkbox" name="days" value="${d}" ${currentSchedule.includes(d) ? 'checked' : ''}>
+                            <label for="day-${i}" class="day-label">${d}</label>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:20px;">
+                    <div class="form-group">
+                        <label><i class="fa-regular fa-clock" style="color:var(--themePrimary)"></i> Inicio</label>
+                        <input type="number" name="workStartHour" value="${doctor?.workStartHour ?? 8}" min="0" max="23">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-regular fa-clock" style="color:var(--orange)"></i> Fin</label>
+                        <input type="number" name="workEndHour" value="${doctor?.workEndHour ?? 17}" min="0" max="23">
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label><i class="fa-regular fa-clock" style="color:var(--orange)"></i> &nbsp;Hora de Fin</label>
-                <input type="number" name="workEndHour" value="${doctor?.workEndHour ?? 17}" min="0" max="23">
+
+            <div style="background:var(--white); padding:20px; border-radius:16px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                <h4 style="font-size:0.9rem; color:var(--themePrimary); margin-bottom:15px; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-users-gear"></i> Capacidad y Cupos
+                </h4>
+                
+                <div class="form-group">
+                    <label>Pacientes máximos por día</label>
+                    <input type="number" name="dailyCapacity" value="${doctor?.dailyCapacity ?? 20}" min="1" max="100">
+                </div>
+
+                <div class="form-group">
+                    <label>Duración estimada por cita (min)</label>
+                    <select name="duration" style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--neutralQuaternaryAlt);">
+                        <option value="15" ${doctor?.duration === 15 ? 'selected' : ''}>15 minutos</option>
+                        <option value="20" ${doctor?.duration === 20 ? 'selected' : ''}>20 minutos</option>
+                        <option value="30" ${doctor?.duration === 30 ? 'selected' || !doctor?.duration ? 'selected' : '' : ''}>30 minutos</option>
+                        <option value="45" ${doctor?.duration === 45 ? 'selected' : ''}>45 minutos</option>
+                        <option value="60" ${doctor?.duration === 60 ? 'selected' : ''}>60 minutos</option>
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label><i class="fa-solid fa-users" style="color:var(--green)"></i> &nbsp;Cupos Diarios</label>
-                <input type="number" name="dailyCapacity" value="${doctor?.dailyCapacity ?? 20}" min="1" max="100">
+
+            <!-- Sección de Bloqueo de Emergencia -->
+            <div class="block-alert">
+                <h4><i class="fa-solid fa-user-slash"></i> Bloqueo de Agenda</h4>
+                <p>Use esta opción para desactivar la recepción de citas por periodos específicos (vacaciones, congresos o emergencias).</p>
+                
+                <div style="display:flex; gap:10px; margin-top:12px;">
+                    <button type="button" class="btn-signature-clear" style="flex:1;" id="btn-block-today">Bloquear Hoy</button>
+                    <button type="button" class="btn-signature-clear" style="flex:1;" id="btn-manage-blocks">Ver bloqueos</button>
+                </div>
             </div>
-            <div class="form-group">
-                <label><i class="fa-regular fa-calendar" style="color:var(--themePrimary)"></i> &nbsp;Días de Consulta</label>
-                <input type="text" name="schedule" value="${doctor?.schedule || 'Lun-Vie'}" placeholder="Ej: Lun, Mié, Vie">
-            </div>
-            <button type="submit" class="btn-save">
-                <i class="fa-solid fa-rotate"></i> &nbsp;Actualizar Disponibilidad
+
+            <button type="submit" class="btn-save" style="margin-top:20px; width:100%;">
+                <i class="fa-solid fa-floppy-disk"></i> &nbsp;Guardar Configuración
             </button>
         </form>
     `;
+
+    document.getElementById('btn-block-today').onclick = () => {
+        if (confirm('¿Desea bloquear su agenda para el resto del día de hoy? No se podrán agendar nuevas citas.')) {
+            showToast('Agenda bloqueada para hoy', 'var(--red)');
+        }
+    };
+
     document.getElementById('availability-form').onsubmit = (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
-        onSave(Object.fromEntries(fd));
+        const data = Object.fromEntries(fd);
+
+        // Formatear días seleccionados
+        const selectedDays = Array.from(e.target.querySelectorAll('input[name="days"]:checked')).map(cb => cb.value);
+        data.schedule = selectedDays.join(', ');
+
+        onSave(data);
     };
 }
 
-// ─── CONSULTA MÉDICA ──────────────────────────────────────────────────────────
-export function renderConsultationView(patient, appointment, medicalRecord, onSave) {
+
+// ─── CONSULTA MÉDICA (Mejorada con CIE-10 y Examen Físico) ─────────────────────
+export function renderConsultationView(patient, appointment, medicalRecord, onSave, onPreview) {
     const container = document.getElementById('consultation-form-area');
     const lastVitals = medicalRecord?.vitalSigns;
 
+    // Mini-catálogo CIE-10 para la demo
+    const cie10Data = [
+        { code: 'A09', name: 'Diarrea y gastroenteritis de presunto origen infeccioso' },
+        { code: 'B34.9', name: 'Infección viral, no especificada' },
+        { code: 'E11.9', name: 'Diabetes mellitus no insulinodependiente sin complicaciones' },
+        { code: 'I10', name: 'Hipertensión esencial (primaria)' },
+        { code: 'J00', name: 'Rinofaringitis aguda (resfriado común)' },
+        { code: 'J02.9', name: 'Faringitis aguda, no especificada' },
+        { code: 'J06.9', name: 'Infección aguda de las vías respiratorias superiores' },
+        { code: 'K21.9', name: 'Enfermedad del reflujo gastroesofágico sin esofagitis' },
+        { code: 'M54.5', name: 'Lumbago no especificado' },
+        { code: 'N39.0', name: 'Infección de vías urinarias, sitio no especificado' },
+        { code: 'R05', name: 'Tos' },
+        { code: 'R50.9', name: 'Fiebre, no especificada' },
+        { code: 'R51', name: 'Cefalea' },
+        { code: 'Z00.0', name: 'Examen médico general' }
+    ];
+
     container.innerHTML = `
-        <div class="consultation-summary">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-                <div class="patient-avatar" style="width:40px;height:40px;border-radius:10px;background-image:url('https://ui-avatars.com/api/?name=${encodeURIComponent(patient.name)}&background=e2e8f0&color=003b69')"></div>
+        <!-- Resumen del Paciente -->
+        <div class="consultation-summary" style="background:var(--themeLighterAlt); border-left:4px solid var(--themePrimary); padding:15px; border-radius:12px; margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                <div class="patient-avatar" style="width:45px;height:45px;border-radius:12px;background-image:url('https://ui-avatars.com/api/?name=${encodeURIComponent(patient.name)}&background=ffffff&color=003b69&bold=true')"></div>
                 <div>
-                    <h4>${patient.name}</h4>
-                    <p>${patient.docType}-${patient.dni} &nbsp;•&nbsp; ${patient.bloodType || '?'}</p>
+                    <h4 style="margin:0; color:var(--themePrimary);">${patient.name}</h4>
+                    <p style="margin:0; font-size:0.75rem; color:var(--neutralSecondary);">${patient.docType}-${patient.dni} &nbsp;•&nbsp; ${patient.bloodType || '?'}</p>
                 </div>
             </div>
-            <p><b>Motivo:</b> ${appointment.reason}</p>
-            ${patient.allergies?.length ? `<p style="color:var(--red);font-weight:600;margin-top:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Alérgico a: ${patient.allergies.join(', ')}</p>` : ''}
-        </div>
-
-        <div class="form-container" style="margin-bottom:16px;">
-            <p style="font-size:0.8rem;font-weight:600;color:var(--neutralSecondary);text-transform:uppercase;margin-bottom:12px;">Signos Vitales</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                <div class="form-group" style="margin-bottom:0">
-                    <label>PA (mmHg)</label>
-                    <input type="text" id="vt-pa" value="${lastVitals?.bloodPressure || ''}" placeholder="120/80">
-                </div>
-                <div class="form-group" style="margin-bottom:0">
-                    <label>FC (lpm)</label>
-                    <input type="number" id="vt-fc" value="${lastVitals?.heartRate || ''}" placeholder="72">
-                </div>
-                <div class="form-group" style="margin-bottom:0">
-                    <label>Temperatura (°C)</label>
-                    <input type="number" step="0.1" id="vt-temp" value="${lastVitals?.temperature || ''}" placeholder="36.5">
-                </div>
-                <div class="form-group" style="margin-bottom:0">
-                    <label>SPO2 (%)</label>
-                    <input type="number" id="vt-spo2" value="${lastVitals?.spo2 || ''}" placeholder="98">
-                </div>
+            <div style="font-size:0.85rem; line-height:1.4;">
+                <p style="margin-bottom:4px;"><b>Motivo:</b> ${appointment.reason}</p>
+                ${patient.allergies?.length ? `<p style="color:var(--red);font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> ALERGIAS: ${patient.allergies.join(', ')}</p>` : ''}
             </div>
         </div>
 
-        <form id="consultation-form" class="form-container">
-            <div class="form-group">
-                <label><i class="fa-solid fa-notes-medical" style="color:var(--themePrimary)"></i> &nbsp;Síntomas / Historia Actual</label>
-                <textarea name="symptoms" rows="3" placeholder="Describa los síntomas presentados..."></textarea>
+        <form id="consultation-form">
+            <!-- 1. Signos Vitales -->
+            <div class="hce-section">
+                <div class="hce-section-title"><i class="fa-solid fa-heart-pulse"></i> Signos Vitales</div>
+                <div class="vitals-grid">
+                    <div class="vital-input-wrapper">
+                        <label style="font-size:0.7rem; color:var(--neutralSecondary);">Tensión Art.</label>
+                        <input type="text" id="vt-pa" value="${lastVitals?.bloodPressure || ''}" placeholder="120/80">
+                        <span class="vital-unit">mmHg</span>
+                    </div>
+                    <div class="vital-input-wrapper">
+                        <label style="font-size:0.7rem; color:var(--neutralSecondary);">Frec. Card.</label>
+                        <input type="number" id="vt-fc" value="${lastVitals?.heartRate || ''}" placeholder="72">
+                        <span class="vital-unit">lpm</span>
+                    </div>
+                    <div class="vital-input-wrapper">
+                        <label style="font-size:0.7rem; color:var(--neutralSecondary);">Temperatura</label>
+                        <input type="number" step="0.1" id="vt-temp" value="${lastVitals?.temperature || ''}" placeholder="36.5">
+                        <span class="vital-unit">°C</span>
+                    </div>
+                    <div class="vital-input-wrapper">
+                        <label style="font-size:0.7rem; color:var(--neutralSecondary);">SPO2</label>
+                        <input type="number" id="vt-spo2" value="${lastVitals?.spo2 || ''}" placeholder="98">
+                        <span class="vital-unit">%</span>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label><i class="fa-solid fa-magnifying-glass-plus" style="color:var(--teal)"></i> &nbsp;Diagnóstico</label>
-                <textarea name="diagnosis" rows="2" placeholder="Impresión diagnóstica..."></textarea>
+
+            <!-- 2. Historia y Examen -->
+            <div class="hce-section">
+                <div class="hce-section-title"><i class="fa-solid fa-file-waveform"></i> Evaluación Clínica</div>
+                <div class="form-group">
+                    <label>Enfermedad Actual / Síntomas</label>
+                    <textarea name="symptoms" rows="3" placeholder="Cronología, inicio, síntomas asociados..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Examen Físico</label>
+                    <textarea name="physicalExam" rows="3" placeholder="Hallazgos relevantes a la exploración..."></textarea>
+                </div>
             </div>
-            <div class="form-group">
-                <label><i class="fa-solid fa-clipboard-list" style="color:var(--blue)"></i> &nbsp;Tratamiento / Plan</label>
-                <textarea name="treatment" rows="3" placeholder="Indicaciones, plan terapéutico..."></textarea>
+
+            <!-- 3. Búsqueda CIE-10 (Diagnóstico) -->
+            <div class="hce-section">
+                <div class="hce-section-title"><i class="fa-solid fa-magnifying-glass-plus"></i> Diagnóstico (CIE-10)</div>
+                <div class="diagnosis-search-container">
+                    <input type="text" id="diagnosis-search" placeholder="Busque por código o nombre (ej: J00)..." autocomplete="off" style="margin-bottom:0;">
+                    <div id="diagnosis-results" class="diagnosis-results"></div>
+                </div>
+                <div id="selected-diagnoses" style="margin-top:10px;">
+                    <!-- Diagnósticos seleccionados aparecerán aquí -->
+                </div>
+                <input type="hidden" name="diagnosis_codes" id="diagnosis-codes-input">
             </div>
-            <div class="form-group">
-                <label><i class="fa-solid fa-pills" style="color:var(--orange)"></i> &nbsp;Medicamentos y Dosis</label>
-                <textarea name="prescriptions" rows="2" placeholder="Medicamento, dosis, frecuencia, días..."></textarea>
+
+            <!-- 4. Plan y Tratamiento -->
+            <div class="hce-section">
+                <div class="hce-section-title"><i class="fa-solid fa-clipboard-check"></i> Plan Terapéutico</div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-pills" style="color:var(--orange)"></i> Tratamiento Farmacológico</label>
+                    <textarea name="prescriptions" rows="3" placeholder="Fármaco, dosis y posología..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-vial-virus" style="color:var(--blue)"></i> Exámenes y Paraclínicos</label>
+                    <textarea name="labOrders" rows="2" placeholder="Laboratorios, RX, Eco, etc..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-bed" style="color:var(--teal)"></i> Reposo Médico / Indicaciones</label>
+                    <textarea name="restIndications" rows="2" placeholder="Reposo por X días, dieta, etc..."></textarea>
+                </div>
             </div>
-            <div class="form-group">
-                <label><i class="fa-regular fa-calendar-check" style="color:var(--green)"></i> &nbsp;Próxima Cita / Seguimiento</label>
-                <input type="text" name="followUp" placeholder="Ej: Control en 15 días">
+
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button type="button" id="btn-preview-prescription" class="btn-save" style="background:var(--themePrimary); border-radius:15px; flex:1;">
+                    <i class="fa-solid fa-file-pdf"></i> &nbsp;VISTA PREVIA
+                </button>
+                <button type="submit" class="btn-save" style="background:var(--green); border-radius:15px; flex:2; font-weight:700; box-shadow:0 8px 16px rgba(16,124,16,0.25);">
+                    <i class="fa-solid fa-floppy-disk"></i> &nbsp;FINALIZAR ACTO MÉDICO
+                </button>
             </div>
-            <button type="submit" class="btn-save" style="background:var(--green);">
-                <i class="fa-solid fa-circle-check"></i> &nbsp;Finalizar y Guardar Consulta
-            </button>
         </form>
     `;
+
+    // --- Lógica de Previsualización ---
+    document.getElementById('btn-preview-prescription').onclick = () => {
+        const form = document.getElementById('consultation-form');
+        const fd = new FormData(form);
+        const data = Object.fromEntries(fd);
+
+        // Disparar evento de previsualización
+        if (typeof onPreview === 'function') {
+            onPreview(data);
+        } else {
+            console.warn("onPreview no definido");
+            showToast('Generando vista previa...', 'var(--themePrimary)');
+        }
+    };
+
+    // --- Lógica de Búsqueda CIE-10 ---
+    const searchInput = document.getElementById('diagnosis-search');
+    const resultsDiv = document.getElementById('diagnosis-results');
+    const selectedDiv = document.getElementById('selected-diagnoses');
+    const codesInput = document.getElementById('diagnosis-codes-input');
+    let selectedCodes = [];
+
+    searchInput.oninput = (e) => {
+        const query = e.target.value.toLowerCase();
+        if (query.length < 2) { resultsDiv.style.display = 'none'; return; }
+
+        const filtered = cie10Data.filter(d =>
+            d.code.toLowerCase().includes(query) ||
+            d.name.toLowerCase().includes(query)
+        ).slice(0, 6);
+
+        if (filtered.length > 0) {
+            resultsDiv.innerHTML = filtered.map(d => `
+                <div class="diagnosis-item" data-code="${d.code}" data-name="${d.name}">
+                    <span class="cie-code">${d.code}</span> ${d.name}
+                </div>
+            `).join('');
+            resultsDiv.style.display = 'block';
+        } else {
+            resultsDiv.style.display = 'none';
+        }
+    };
+
+    resultsDiv.onclick = (e) => {
+        const item = e.target.closest('.diagnosis-item');
+        if (item) {
+            const { code, name } = item.dataset;
+            if (!selectedCodes.includes(code)) {
+                selectedCodes.push(code);
+                const pill = document.createElement('div');
+                pill.className = 'summary-pill';
+                pill.innerHTML = `[${code}] ${name} <i class="fa-solid fa-xmark" style="margin-left:8px; cursor:pointer;"></i>`;
+                pill.onclick = () => {
+                    selectedCodes = selectedCodes.filter(c => c !== code);
+                    pill.remove();
+                    codesInput.value = selectedCodes.join(',');
+                };
+                selectedDiv.appendChild(pill);
+                codesInput.value = selectedCodes.join(',');
+            }
+            searchInput.value = '';
+            resultsDiv.style.display = 'none';
+        }
+    };
+
+    // Cerrar resultados al tocar fuera
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+            resultsDiv.style.display = 'none';
+        }
+    });
 
     document.getElementById('consultation-form').onsubmit = (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
+        const data = Object.fromEntries(fd);
+
         const vitalSigns = {
             bloodPressure: document.getElementById('vt-pa').value,
             heartRate: parseInt(document.getElementById('vt-fc').value) || null,
             temperature: parseFloat(document.getElementById('vt-temp').value) || null,
             spo2: parseInt(document.getElementById('vt-spo2').value) || null
         };
-        onSave({ ...Object.fromEntries(fd), vitalSigns });
+
+        onSave({ ...data, vitalSigns });
     };
 }
+
 
 // ─── NUEVA CITA (completo, igual que versión web) ──────────────────────────
 export function renderNewAppointmentView(patients, doctors, currentDoctor, onSave, store) {
@@ -414,14 +747,14 @@ export function renderNewAppointmentView(patients, doctors, currentDoctor, onSav
                 </div>
                 <div class="form-group">
                     <label>Buscar Paciente por Cédula</label>
-                    <div style="display:flex;gap:0;">
-                        <select id="apt-doc-type" style="width:68px;border-radius:8px 0 0 8px;border-right:none;padding:12px 8px;">
+                    <div class="input-group">
+                        <select id="apt-doc-type" class="select-compact">
                             <option value="V">V</option>
                             <option value="E">E</option>
                             <option value="J">J</option>
                             <option value="P">P</option>
                         </select>
-                        <input type="text" id="apt-cedula" placeholder="Número de cédula..." style="border-radius:0 8px 8px 0; flex:1; padding:12px 14px;">
+                        <input type="text" id="apt-cedula" placeholder="Número de cédula..." style="flex:1;">
                     </div>
                     <div id="apt-patient-feedback" style="margin-top:8px;font-size:0.82rem;"></div>
                     <input type="hidden" id="apt-patient-id" name="patientId">
@@ -429,7 +762,7 @@ export function renderNewAppointmentView(patients, doctors, currentDoctor, onSav
 
                 <div class="form-group" id="apt-patient-name-group" style="display:none;">
                     <label>Nombre del Paciente</label>
-                    <input type="text" id="apt-patient-name" placeholder="Nombre completo..." readonly style="opacity:0.8;">
+                    <input type="text" id="apt-patient-name" placeholder="Nombre completo..." readonly>
                 </div>
 
                 <!-- Selector alternativo por lista -->

@@ -5,16 +5,27 @@ export async function createStore(bus) {
 
   // Datos de ejemplo más completos
   const defaultData = {
-    version: 'APK-1.0',
+    version: 'APK-1.3',
     users: [
       {
         id: 'user_daruiz',
         username: 'daruiz',
         password: 'demo123',
         role: 'doctor',
-        name: 'Dra. Ana Ruiz',
-        email: 'ana.ruiz@hospital.com',
+        name: 'Dr. Manuel Valero',
+        email: 'manuel.valero@hospital.com',
         doctorId: 'd_1',
+        isActive: true,
+        createdAt: Date.now()
+      },
+      {
+        id: 'user_esoler',
+        username: 'esoler',
+        password: 'demo123',
+        role: 'nurse',
+        name: 'Enf. Elena Soler',
+        email: 'elena.soler@hospital.com',
+        nurseId: 'n_1',
         isActive: true,
         createdAt: Date.now()
       }
@@ -554,33 +565,6 @@ export async function createStore(bus) {
 
     loginHistory: [],
 
-    // Personal de Enfermería
-    nurses: [
-      {
-        id: 'n_1',
-        name: 'Enf. Elena Soler',
-        email: 'elena.soler@hospital.com',
-        phone: '555-0301',
-        areaId: 'area_1',
-        shift: 'Mañana',
-        isActive: true,
-        createdAt: Date.now()
-      }
-    ],
-
-    // Personal de Recepción
-    receptionists: [
-      {
-        id: 'r_1',
-        name: 'Recepcionista Carla Román',
-        email: 'carla.recepcion@hospital.com',
-        phone: '555-0401',
-        areaId: 'area_1',
-        isActive: true,
-        createdAt: Date.now()
-      }
-    ],
-
     // CONFIGURACIÓN DE PÁGINA DE BIENVENIDA
     landingConfig: {
       hero: {
@@ -684,7 +668,14 @@ export async function createStore(bus) {
       // Si es un array (colección), lo migramos solo si tiene datos
       if (Array.isArray(oldData[key])) {
         if (oldData[key].length > 0) {
-          migrated[key] = oldData[key];
+          // Caso especial: para la colección de usuarios, queremos asegurar que los defaults existan
+          if (key === 'users') {
+            const existingIds = new Set(oldData[key].map(u => u.id));
+            const newDefaults = newData[key].filter(u => !existingIds.has(u.id));
+            migrated[key] = [...oldData[key], ...newDefaults];
+          } else {
+            migrated[key] = oldData[key];
+          }
         }
       } else if (typeof oldData[key] === 'object' && oldData[key] !== null) {
         // Si es un objeto, lo mezclamos con el nuevo (para no perder claves nuevas)

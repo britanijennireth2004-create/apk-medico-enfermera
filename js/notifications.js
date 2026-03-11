@@ -234,11 +234,9 @@ export function mountNotifications(root, { store, user }) {
                 </button>`).join('')}
             </div>
             <!-- Buscador -->
-            <div style="position:relative;margin-top:10px;">
-                <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--neutralSecondary);font-size:0.8rem;"></i>
-                <input id="notif-search-input" type="text" placeholder="Buscar mensajes..." value="${state.search}"
-                       style="width:100%;padding:10px 12px 10px 36px;border-radius:20px;border:1px solid var(--neutralLight);
-                              font-size:0.83rem;box-sizing:border-box;background:var(--neutralLighterAlt,#f8f8f8);">
+            <div class="search-input-wrap" style="margin-top:10px;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input id="notif-search-input" type="text" placeholder="Buscar mensajes..." value="${state.search}">
             </div>
         `;
         root.appendChild(header);
@@ -258,7 +256,8 @@ export function mountNotifications(root, { store, user }) {
     // ── LISTA ─────────────────────────────────────────────────────────────────
     function buildList(items) {
         const wrap = document.createElement('div');
-        wrap.style.cssText = 'display:flex;flex-direction:column;gap:0;';
+        wrap.className = 'notif-list-container';
+        wrap.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
 
         if (!items.length) {
             wrap.innerHTML = `
@@ -283,34 +282,36 @@ export function mountNotifications(root, { store, user }) {
 
             const row = document.createElement('div');
             row.dataset.id = item.id;
-            row.style.cssText = [
-                'display:flex;align-items:flex-start;gap:12px;padding:12px 0;',
-                'border-bottom:1px solid var(--neutralLight);cursor:pointer;',
-                isUnread ? 'background:rgba(0,59,105,.03);' : '',
-                isDraft ? 'background:rgba(255,185,0,.04);' : ''
-            ].join('');
+            row.className = `notif-msg-row ${isUnread ? 'unread' : ''}`;
+            row.style.cssText = `
+                display:flex; align-items:flex-start; gap:14px; padding:15px;
+                border-radius:14px; background:#fff; border:1px solid ${isUnread ? 'var(--themePrimary)' : 'var(--neutralLighter)'};
+                cursor:pointer; position:relative; overflow:hidden;
+                box-shadow: ${isUnread ? '0 4px 12px rgba(0,59,105,0.08)' : 'none'};
+            `;
 
             row.innerHTML = `
-                <div style="width:38px;height:38px;border-radius:10px;background:${ac};display:flex;align-items:center;justify-content:center;
-                            font-weight:800;font-size:1rem;color:#fff;flex-shrink:0;${isUnread ? 'box-shadow:0 2px 6px rgba(0,59,105,.2)' : ''}">${initial}</div>
+                <div class="notif-actor-avatar" style="background:${ac};">
+                    ${initial}
+                </div>
                 <div style="flex:1;min-width:0;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:4px;">
-                        <span style="font-size:0.83rem;font-weight:${isUnread ? '700' : '500'};color:${isUnread ? 'var(--neutralDark)' : 'var(--neutralPrimary)'};
-                                     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">${sender}</span>
-                        <span style="font-size:0.68rem;color:${isUnread ? 'var(--themePrimary)' : 'var(--neutralSecondary)'};font-weight:${isUnread ? '700' : '400'};flex-shrink:0;">${fmtDate(item.createdAt)}</span>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                        <span style="font-size:0.85rem; font-weight:${isUnread ? '800' : '600'}; color:var(--neutralPrimary);
+                                     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;">${sender}</span>
+                        <span style="font-size:0.65rem; color:var(--neutralSecondary);">${fmtDate(item.createdAt)}</span>
                     </div>
-                    <div style="font-size:0.82rem;font-weight:${isUnread ? '700' : '500'};color:var(--neutralDark);
-                                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">${item.title || '(sin asunto)'}</div>
-                    <div style="font-size:0.75rem;color:var(--neutralSecondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">
-                        ${(item.content || '').replace(/\n/g, ' ').substring(0, 80)}
+                    <div style="font-size:0.9rem; font-weight:${isUnread ? '700' : '500'}; color:var(--neutralDark);
+                                white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:4px 0;">${item.title || '(sin asunto)'}</div>
+                    <div style="font-size:0.75rem; color:var(--neutralSecondary); line-height:1.4; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">
+                        ${(item.content || '').replace(/\n/g, ' ')}
                     </div>
-                    <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
                         ${chBadge(item.channel)}
                         ${item.priority && item.priority !== 'normal' ? prBadge(item.priority) : ''}
-                        ${isDraft ? '<span style="font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:10px;color:#b45309;background:#fef3c7;">Borrador</span>' : ''}
-                        ${isUnread ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--themePrimary);display:inline-block;margin-left:2px;flex-shrink:0;align-self:center;"></span>' : ''}
+                        ${isDraft ? '<span style="font-size:0.62rem;font-weight:800;padding:2px 8px;border-radius:10px;color:#92400e;background:#fef3c7;text-transform:uppercase;">Borrador</span>' : ''}
                     </div>
                 </div>
+                ${isUnread ? '<div style="position:absolute; top:15px; right:8px; width:10px; height:10px; border-radius:50%; background:var(--themePrimary); border:2px solid #fff;"></div>' : ''}
             `;
             row.addEventListener('click', () => {
                 markRead(item.id);
@@ -337,45 +338,57 @@ export function mountNotifications(root, { store, user }) {
         const ac = avatarColor(senderName);
         const isDraft = item._src === 'drafts';
 
+        wrap.className = 'notif-detail-view';
         wrap.innerHTML = `
-            <!-- Toolbar detalle -->
-            <div style="display:flex;align-items:center;gap:8px;padding:0 0 14px;border-bottom:1px solid var(--neutralLight);margin-bottom:14px;">
-                <button id="detail-back" style="background:none;border:none;cursor:pointer;color:var(--themePrimary);font-size:1rem;padding:6px;">
+            <!-- Toolbar detallado -->
+            <div style="display:flex;align-items:center;gap:12px;padding:5px 0 15px;margin-bottom:15px;border-bottom:1px solid var(--neutralLighter);">
+                <button id="detail-back" style="background:var(--neutralLighterAlt);border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;color:var(--themePrimary);display:flex;align-items:center;justify-content:center;">
                     <i class="fa-solid fa-arrow-left"></i>
                 </button>
-                <div style="flex:1;font-size:0.75rem;color:var(--neutralSecondary);">${fmtFull(item.createdAt)}</div>
-                ${!isDraft ? `
-                <button data-action="star" data-id="${item.id}"
-                    style="background:none;border:none;cursor:pointer;font-size:0.9rem;color:${item.starred ? '#f59e0b' : 'var(--neutralTertiary)'};">
-                    <i class="fa-${item.starred ? 'solid' : 'regular'} fa-star"></i>
-                </button>` : ''}
-                <button data-action="delete-detail" data-id="${item.id}"
-                    style="background:none;border:none;cursor:pointer;color:var(--red);font-size:0.9rem;">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </div>
-
-            <!-- Cabecera del mensaje -->
-            <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;">
-                <div style="width:46px;height:46px;border-radius:12px;background:${ac};display:flex;align-items:center;justify-content:center;
-                            font-weight:800;font-size:1.2rem;color:#fff;flex-shrink:0;">${senderName.charAt(0).toUpperCase()}</div>
-                <div style="flex:1;min-width:0;">
-                    <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:4px;">
-                        <span style="font-size:1rem;font-weight:700;color:var(--neutralDark);">${item.title || '(sin asunto)'}</span>
-                        ${chBadge(item.channel)} ${prBadge(item.priority)}
-                    </div>
-                    <div style="font-size:0.78rem;color:var(--neutralSecondary);">
-                        <strong style="color:var(--neutralPrimary);">${senderName}</strong>
-                        <i class="fa-solid fa-arrow-right" style="font-size:0.6rem;margin:0 3px;"></i>
-                        ${item.recipientName || '—'}
-                    </div>
+                <div style="flex:1;">
+                    <div style="font-size:0.7rem;font-weight:700;color:var(--neutralPrimary);text-transform:uppercase;letter-spacing:0.03em;">Detalle del Mensaje</div>
+                    <div style="font-size:0.65rem;color:var(--neutralSecondary);">${fmtFull(item.createdAt)}</div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    ${!isDraft ? `
+                    <button data-action="star" data-id="${item.id}"
+                        style="background:#fff;border:1px solid var(--neutralLight);width:36px;height:36px;border-radius:10px;cursor:pointer;color:${item.starred ? '#f59e0b' : 'var(--neutralTertiaryAlt)'};">
+                        <i class="fa-${item.starred ? 'solid' : 'regular'} fa-star"></i>
+                    </button>` : ''}
+                    <button data-action="delete-detail" data-id="${item.id}"
+                        style="background:#fff;border:1px solid #fee2e2;width:36px;height:36px;border-radius:10px;cursor:pointer;color:var(--red);">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Cuerpo -->
-            <div style="font-size:0.88rem;color:var(--neutralDark);line-height:1.75;white-space:pre-wrap;
-                        background:var(--neutralLighterAlt,#f8f8f8);border-radius:12px;padding:16px;margin-bottom:20px;">
-                ${item.content || 'Sin contenido.'}
+            <!-- Cabecera Premium -->
+            <div style="background:#fff; border-radius:16px; border:1px solid var(--neutralLighter); padding:15px; margin-bottom:15px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+                <div style="display:flex;gap:15px;align-items:center;">
+                    <div class="notif-actor-avatar" style="background:${ac}; width:50px; height:50px;">
+                        ${senderName.charAt(0).toUpperCase()}
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                         <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:0.95rem;font-weight:800;color:var(--neutralDark);">${senderName}</span>
+                         </div>
+                         <div style="font-size:0.75rem;color:var(--neutralSecondary); margin-top:2px;">
+                            Para: <span style="font-weight:600; color:var(--neutralPrimary);">${item.recipientName || '—'}</span>
+                         </div>
+                    </div>
+                </div>
+                <div style="margin-top:15px; padding-top:12px; border-top:1px dashed var(--neutralLighter); display:flex; gap:8px;">
+                     ${chBadge(item.channel)} ${prBadge(item.priority)}
+                </div>
+            </div>
+
+            <!-- Asunto y Cuerpo -->
+            <div style="margin-bottom:20px;">
+                <h2 style="font-size:1.15rem; font-weight:800; color:var(--neutralDark); margin-bottom:12px;">${item.title || '(sin asunto)'}</h2>
+                <div style="font-size:0.95rem; color:var(--neutralDark); line-height:1.8; white-space:pre-wrap;
+                            background:#fff; border-radius:16px; border:1px solid var(--neutralLighter); padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+                    ${item.content || 'Sin contenido.'}
+                </div>
             </div>
 
             ${item.appointmentId ? `
@@ -426,97 +439,89 @@ export function mountNotifications(root, { store, user }) {
 
         const wrap = document.createElement('div');
         wrap.innerHTML = `
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px;">
                 <button id="compose-cancel-btn"
-                    style="background:none;border:none;cursor:pointer;color:var(--themePrimary);font-size:1rem;padding:6px;">
+                    style="background:var(--neutralLighterAlt); border:none; width:36px; height:36px; border-radius:50%; cursor:pointer; color:var(--themePrimary); display:flex; align-items:center; justify-content:center;">
                     <i class="fa-solid fa-arrow-left"></i>
                 </button>
-                <span style="font-weight:700;font-size:0.95rem;color:var(--neutralDark);">
-                    ${isEditing ? 'Editar borrador' : replyTo ? 'Responder' : 'Nuevo mensaje'}
-                </span>
-            </div>
+                <div style="flex:1;">
+                    <div style="font-size:0.7rem;font-weight:700;color:var(--neutralPrimary);text-transform:uppercase;letter-spacing:0.03em;">Mensajería Hospitalaria</div>
+                    <div style="font-size:0.9rem;font-weight:800;color:var(--neutralDark);">${isEditing ? 'Editar Borrador' : replyTo ? 'Responder Mensaje' : 'Redactar Nuevo'}</div>
+                </div>
+            </div >
 
-            <form id="compose-form" style="display:flex;flex-direction:column;gap:0;
-                  background:#fff;border-radius:14px;border:1px solid var(--neutralLight);overflow:hidden;margin-bottom:16px;">
+            <form id="compose-form" class="compose-form-container">
 
                 <!-- Para -->
-                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--neutralLight);">
-                    <span style="font-size:0.78rem;color:var(--neutralSecondary);font-weight:600;min-width:60px;">Para</span>
-                    ${replyTo && !isEditing ? `
-                    <span style="font-size:0.85rem;font-weight:600;color:var(--themePrimary);flex:1;">
-                        ${getActorName(initTo)}
-                        <input type="hidden" id="cmp-to" value="${initTo}">
-                    </span>` : `
-                    <select id="cmp-to" required
-                        style="flex:1;border:none;font-size:0.85rem;background:transparent;outline:none;color:var(--neutralDark);">
-                        <option value="">Seleccionar destinatario...</option>
-                        <optgroup label="Por gremio">
-                            <option value="role_admin"        ${initTo === 'role_admin' ? 'selected' : ''}>Alta Administración</option>
-                            <option value="role_receptionist" ${initTo === 'role_receptionist' ? 'selected' : ''}>Mesa de Recepción</option>
-                            <option value="role_doctor"       ${initTo === 'role_doctor' ? 'selected' : ''}>Todo el Gremio Médico</option>
-                            <option value="role_nurse"        ${initTo === 'role_nurse' ? 'selected' : ''}>Personal de Enfermería</option>
-                        </optgroup>
-                        ${adminUsers.length ? `<optgroup label="Directivos">
-                            ${adminUsers.map(a => `<option value="${a.id}" ${a.id === initTo ? 'selected' : ''}>${a.name} (Admin)</option>`).join('')}
-                        </optgroup>`: ''}
-                        <optgroup label="Médicos">
-                            ${doctors.map(d => `<option value="${d.id}" ${d.id === initTo ? 'selected' : ''}>${d.name}</option>`).join('')}
-                        </optgroup>
-                        <optgroup label="Pacientes">
-                            ${patients.map(p => `<option value="${p.id}" ${p.id === initTo ? 'selected' : ''}>${p.name}</option>`).join('')}
-                        </optgroup>
-                    </select>`}
+                <div class="compose-input-group">
+                    <span class="compose-label">Para</span>
+                    <div style="flex:1; position:relative;">
+                        ${replyTo && !isEditing ? `
+                        <div style="font-size:0.9rem;font-weight:700;color:var(--themePrimary); padding:4px 0;">
+                            ${getActorName(initTo)}
+                            <input type="hidden" id="cmp-to" value="${initTo}">
+                        </div>` : `
+                        <select id="cmp-to" class="compose-field" required>
+                            <option value="">Seleccionar destinatario...</option>
+                            <optgroup label="Directivos y Gremio">
+                                <option value="role_admin"        ${initTo === 'role_admin' ? 'selected' : ''}>Alta Administración</option>
+                                <option value="role_doctor"       ${initTo === 'role_doctor' ? 'selected' : ''}>Gremio Médico</option>
+                                <option value="role_nurse"        ${initTo === 'role_nurse' ? 'selected' : ''}>Enfermería</option>
+                            </optgroup>
+                            <optgroup label="Pacientes Registrados">
+                                ${patients.map(p => `<option value="${p.id}" ${p.id === initTo ? 'selected' : ''}>${p.name}</option>`).join('')}
+                            </optgroup>
+                        </select>
+                        <i class="fa-solid fa-chevron-down" style="position:absolute; right:0; top:50%; transform:translateY(-50%); font-size:0.7rem; color:var(--neutralSecondary); pointer-events:none;"></i>`}
+                    </div>
                 </div>
 
                 <!-- Asunto -->
-                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--neutralLight);">
-                    <span style="font-size:0.78rem;color:var(--neutralSecondary);font-weight:600;min-width:60px;">Asunto</span>
-                    <input id="cmp-subj" type="text" required placeholder="Asunto del mensaje" value="${initSubj}"
-                           style="flex:1;border:none;font-size:0.85rem;background:transparent;outline:none;color:var(--neutralDark);">
+                <div class="compose-input-group">
+                    <span class="compose-label">Asunto</span>
+                    <input id="cmp-subj" class="compose-field" type="text" required placeholder="Escriba el título del mensaje" value="${initSubj}">
                 </div>
 
-                <!-- Canal y Prioridad en fila -->
-                <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--neutralLight);">
-                    <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-right:1px solid var(--neutralLight);">
-                        <span style="font-size:0.73rem;color:var(--neutralSecondary);font-weight:600;">Canal</span>
-                        <select id="cmp-ch" style="flex:1;border:none;font-size:0.78rem;background:transparent;outline:none;color:var(--neutralDark);">
+                <!-- Parámetros -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--neutralLighter); background: #fafafa;">
+                    <div class="compose-input-group" style="border-right:1px solid var(--neutralLighter); border-bottom:none;">
+                        <span class="compose-label" style="width:auto; margin-right:8px;">Vía</span>
+                        <select id="cmp-ch" class="compose-field" style="font-size:0.8rem; font-weight:600;">
                             <option value="internal" ${initCh === 'internal' ? 'selected' : ''}>Interna</option>
-                            <option value="email"    ${initCh === 'email' ? 'selected' : ''}>Email</option>
-                            <option value="sms"      ${initCh === 'sms' ? 'selected' : ''}>SMS</option>
-                            <option value="push"     ${initCh === 'push' ? 'selected' : ''}>Push</option>
+                            <option value="email" ${initCh === 'email' ? 'selected' : ''}>Email</option>
+                            <option value="sms" ${initCh === 'sms' ? 'selected' : ''}>SMS</option>
                         </select>
                     </div>
-                    <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;">
-                        <span style="font-size:0.73rem;color:var(--neutralSecondary);font-weight:600;">Prioridad</span>
-                        <select id="cmp-pri" style="flex:1;border:none;font-size:0.78rem;background:transparent;outline:none;color:var(--neutralDark);">
-                            <option value="normal"   ${initPri === 'normal' ? 'selected' : ''}>Normal</option>
-                            <option value="low"      ${initPri === 'low' ? 'selected' : ''}>Baja</option>
-                            <option value="high"     ${initPri === 'high' ? 'selected' : ''}>Alta</option>
+                    <div class="compose-input-group" style="border-bottom:none;">
+                        <span class="compose-label" style="width:auto; margin-right:8px;">Nivel</span>
+                        <select id="cmp-pri" class="compose-field" style="font-size:0.8rem; font-weight:600;">
+                            <option value="normal" ${initPri === 'normal' ? 'selected' : ''}>Normal</option>
+                            <option value="high" ${initPri === 'high' ? 'selected' : ''}>Alta</option>
                             <option value="critical" ${initPri === 'critical' ? 'selected' : ''}>Urgente</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Cuerpo del mensaje -->
-                <textarea id="cmp-body" required placeholder="Escriba el mensaje aquí..."
-                    style="flex:1;border:none;padding:14px;font-size:0.88rem;resize:none;min-height:160px;
-                           outline:none;font-family:inherit;line-height:1.7;color:var(--neutralDark);">${initBody}</textarea>
+                <!-- Mensaje -->
+                <textarea id="cmp-body" required placeholder="Escriba su mensaje con detalle aquí..."
+                    style="width:100%; border:none; padding:18px; font-size:0.9rem; min-height:180px;
+                           outline:none; font-family:inherit; line-height:1.7; color:var(--neutralDark); border-bottom:1px solid var(--neutralLighter);">${initBody}</textarea>
 
                 <!-- Acciones del formulario -->
-                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--neutralLighterAlt,#f8f8f8);border-top:1px solid var(--neutralLight);">
+                <div style="display:flex;align-items:center;gap:12px;padding:15px;background:#fff;border-top:1px solid var(--neutralLighter); border-radius:0 0 18px 18px;">
                     <button type="submit"
-                        style="display:flex;align-items:center;gap:7px;background:var(--green);color:#fff;
-                               border:none;border-radius:20px;padding:9px 18px;font-size:0.83rem;font-weight:700;cursor:pointer;">
-                        <i class="fa-solid fa-paper-plane"></i> Enviar
+                        style="flex:2; display:flex;align-items:center;justify-content:center;gap:8px;background:var(--themePrimary);color:#fff;
+                               border:none;border-radius:14px;padding:14px;font-size:0.9rem;font-weight:800;cursor:pointer; box-shadow:0 6px 15px rgba(0,59,105,0.2);">
+                        <i class="fa-solid fa-paper-plane"></i> Enviar Ahora
                     </button>
                     <button type="button" id="save-draft-btn"
-                        style="display:flex;align-items:center;gap:7px;background:var(--yellow);color:#fff;
-                               border:none;border-radius:20px;padding:9px 16px;font-size:0.83rem;font-weight:600;cursor:pointer;">
-                        <i class="fa-solid fa-floppy-disk"></i> Guardar
+                        style="flex:1; display:flex;align-items:center;justify-content:center;gap:6px;background:var(--neutralLighterAlt);color:var(--themePrimary);
+                               border:1px solid var(--themePrimary);border-radius:14px;padding:14px;font-size:0.85rem;font-weight:700;cursor:pointer;">
+                        <i class="fa-solid fa-floppy-disk"></i> Borrador
                     </button>
                     <button type="button" id="discard-btn"
-                        style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--red);font-size:0.85rem;">
-                        <i class="fa-solid fa-trash"></i>
+                        style="background:none; border:none; color:var(--red); width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; cursor:pointer;">
+                        <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
             </form>

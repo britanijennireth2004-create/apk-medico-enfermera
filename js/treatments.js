@@ -15,7 +15,8 @@ const ENTRY_TYPES = {
     treatment: { label: 'Tratamiento', color: '#059669', bg: '#f0fdf4', icon: SVG.pill },
     medication: { label: 'Medicación', color: '#2563eb', bg: '#eff6ff', icon: SVG.syringe },
     observation: { label: 'Observación', color: '#d97706', bg: '#fffbeb', icon: SVG.clipboard },
-    vitals: { label: 'Signos Vitales', color: '#7c3aed', bg: '#f5f3ff', icon: SVG.heart }
+    vitals: { label: 'Signos Vitales', color: '#7c3aed', bg: '#f5f3ff', icon: SVG.heart },
+    amendment: { label: 'Enmienda', color: '#e11d48', bg: '#fff1f2', icon: SVG.clipboard }
 };
 
 const ROUTES = ['Oral', 'IV', 'IM', 'SC', 'Tópica', 'Inhalatoria'];
@@ -39,7 +40,7 @@ export function mountTreatments(root, { store, user }) {
                 <!-- Selector de Paciente -->
                 <div style="background:#fff; border-radius:15px; padding:15px; border:1px solid var(--neutralLight);">
                     <label style="font-size:0.7rem; font-weight:700; color:var(--neutralSecondary); text-transform:uppercase; display:block; margin-bottom:8px;">Paciente Seleccionado</label>
-                    <select id="trx-patient-select" style="width:100%; padding:10px; border-radius:10px; border:1.5px solid var(--neutralLight); background:#f8f9fa; font-size:0.85rem;">
+                    <select id="trx-patient-select" style="width:100%;">
                         <option value="">— Seleccionar Paciente —</option>
                         ${patients.map(p => `<option value="${p.id}" ${p.id === state.selectedPatientId ? 'selected' : ''}>${p.name} (${p.dni || 'S/DNI'})</option>`).join('')}
                     </select>
@@ -104,22 +105,46 @@ export function mountTreatments(root, { store, user }) {
     }
 
     function renderTimeline(logs) {
-        if (!logs.length) return `<div style="text-align:center; padding:30px; border:1px dashed var(--neutralLight); border-radius:12px; color:var(--neutralSecondary); font-size:0.8rem;">No hay registros para mostrar.</div>`;
+        if (!logs.length) {
+            return `<div style="text-align:center; padding:40px 20px; border:2px dashed var(--neutralLight); border-radius:16px; color:var(--neutralSecondary);">
+                <i class="fa-solid fa-folder-open" style="font-size:2.5rem; opacity:0.2; margin-bottom:15px; display:block;"></i>
+                <p style="font-weight:600; font-size:0.9rem;">Sin registros históricos</p>
+                <p style="font-size:0.75rem;">Inicie un nuevo relevo o registre una evolución.</p>
+            </div>`;
+        }
 
         return logs.map(l => {
             const cfg = ENTRY_TYPES[l.entryType] || ENTRY_TYPES.observation;
+            const isAmendment = l.entryType === 'amendment';
+
             return `
-                <div style="background:#fff; border-radius:12px; border:1px solid var(--neutralLight); border-left:4px solid ${cfg.color}; overflow:hidden;">
-                    <div style="padding:10px 12px; background:${cfg.bg}; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:0.65rem; font-weight:800; color:${cfg.color}; text-transform:uppercase;">${cfg.label}</span>
-                        <span style="font-size:0.65rem; color:var(--neutralSecondary);">${new Date(l.timestamp).toLocaleString()}</span>
-                    </div>
-                    <div style="padding:12px;">
-                        <div style="font-size:0.82rem; line-height:1.5; color:var(--neutralPrimary);">${l.detail}</div>
-                        <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center; font-size:0.68rem; color:var(--neutralSecondary); border-top:1px solid #f0f0f0; padding-top:8px;">
-                            <span><i class="fa-solid fa-user-doctor"></i> ${l.userName || 'Personal'}</span>
-                            <span style="font-weight:700; color:var(--neutralDark);">${l.shift || ''}</span>
+                <div class="trx-log-card" style="border-left: 5px solid ${cfg.color};">
+                    <div class="trx-log-header" style="background:${cfg.bg};">
+                        <div class="trx-type-badge" style="color:${cfg.color};">
+                            ${cfg.icon} ${cfg.label}
                         </div>
+                        <div style="font-size:0.65rem; color:var(--neutralSecondary); display:flex; align-items:center; gap:5px;">
+                            <i class="fa-regular fa-clock"></i> ${new Date(l.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                    </div>
+                    <div class="trx-log-body">
+                        <div style="font-size:0.7rem; color:var(--neutralSecondary); margin-bottom:6px; display:flex; justify-content:space-between;">
+                            <span>${new Date(l.timestamp).toLocaleDateString()}</span>
+                            ${l.isAmendment ? `<span class="amendment-badge">Corrección</span>` : ''}
+                        </div>
+                        <div class="trx-log-detail">
+                            ${l.detail}
+                        </div>
+                        <div class="trx-log-footer">
+                            <span><i class="fa-solid fa-user-md"></i> ${l.userName || 'Personal'}</span>
+                            <span class="trx-shift-tag">${l.shift || 'N/D'}</span>
+                        </div>
+                        
+                        ${!isAmendment ? `
+                            <button class="btn-amend" data-id="${l.id}" style="margin-top:10px; background:none; border:none; color:var(--themePrimary); font-size:0.65rem; font-weight:700; padding:0; display:flex; align-items:center; gap:4px;">
+                                <i class="fa-solid fa-pen-nib"></i> Corregir / Enmendar
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -139,61 +164,85 @@ export function mountTreatments(root, { store, user }) {
             });
         });
 
-        root.querySelector('#btn-add-trx')?.addEventListener('click', openFormSheet);
+        root.querySelector('#btn-add-trx')?.addEventListener('click', () => openFormSheet());
+
+        // Manejar enmiendas
+        root.querySelector('#trx-timeline')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-amend');
+            if (btn) {
+                const logId = btn.dataset.id;
+                const originalLog = (store.get('treatmentLogs') || []).find(l => l.id === logId);
+                openFormSheet(originalLog);
+            }
+        });
     }
 
-    function openFormSheet() {
+    function openFormSheet(amendingLog = null) {
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); display:flex; flex-direction:column; justify-content:flex-end;';
 
+        const isAmendment = !!amendingLog;
+        const uiTitle = isAmendment ? 'Realizar Enmienda' : 'Registrar Novedad / Relevo';
+
         overlay.innerHTML = `
-            <div id="trx-sheet" style="background:#fff; border-radius:20px 20px 0 0; max-height:92vh; display:flex; flex-direction:column; animation: slideUp 0.3s ease;">
-                <div style="padding:15px; background:var(--themePrimary); border-radius:20px 20px 0 0; color:#fff; flex-shrink:0;">
+            <div id="trx-sheet" style="background:#f1f5f9; border-radius:24px 24px 0 0; max-height:92vh; display:flex; flex-direction:column; animation: slideUp 0.3s ease;">
+                <div style="padding:15px 20px; background:var(--themePrimary); border-radius:24px 24px 0 0; color:#fff; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
                     <div style="width:40px; height:4px; background:rgba(255,255,255,0.3); border-radius:2px; margin:0 auto 10px;"></div>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3 style="margin:0; font-size:1rem;">Registrar Novedad / Tratamiento</h3>
-                        <button id="btn-close-sheet" style="background:none; border:none; color:#fff; font-size:1.5rem; padding:0 5px;">&times;</button>
+                        <h3 style="margin:0; font-size:1.1rem; font-weight:700;">${uiTitle}</h3>
+                        <button id="btn-close-sheet" style="background:rgba(255,255,255,0.2); border:none; color:#fff; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">&times;</button>
                     </div>
                 </div>
                 <div style="flex:1; overflow-y:auto; padding:20px;">
                     <form id="trx-form" style="display:flex; flex-direction:column; gap:15px;">
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        ${isAmendment ? `
+                            <div style="background:#fff1f2; border:1px solid #fda4af; padding:12px; border-radius:12px; margin-bottom:10px;">
+                                <div style="font-size:0.65rem; font-weight:800; color:#e11d48; text-transform:uppercase; margin-bottom:4px;">Registro Original a Corregir:</div>
+                                <div style="font-size:0.75rem; color:#9f1239; font-style:italic;">"${amendingLog.detail}"</div>
+                            </div>
+                        ` : ''}
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                             <div class="form-group">
-                                <label style="font-weight:700; font-size:0.7rem; color:var(--neutralSecondary); text-transform:uppercase;">Tipo *</label>
-                                <select id="f-type" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--neutralLight); font-size:0.85rem;">
-                                    ${Object.entries(ENTRY_TYPES).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('')}
+                                <label style="font-weight:700; font-size:0.7rem; color:var(--neutralSecondary); text-transform:uppercase; margin-bottom:6px; display:block;">Categoría</label>
+                                <select id="f-type" style="width:100%; padding:12px; border-radius:12px; border:1.5px solid var(--neutralLight); font-size:0.85rem; appearance:none; background:#fff;" ${isAmendment ? 'disabled' : ''}>
+                                    ${Object.entries(ENTRY_TYPES).map(([k, v]) => `
+                                        <option value="${k}" ${isAmendment && k === 'amendment' ? 'selected' : (isAmendment && k === amendingLog.entryType ? 'selected' : '')}>${v.label}</option>
+                                    `).join('')}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label style="font-weight:700; font-size:0.7rem; color:var(--neutralSecondary); text-transform:uppercase;">Turno *</label>
-                                <select id="f-shift" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--neutralLight); font-size:0.85rem;">
+                                <label style="font-weight:700; font-size:0.7rem; color:var(--neutralSecondary); text-transform:uppercase; margin-bottom:6px; display:block;">Turno / Jornada</label>
+                                <select id="f-shift" style="width:100%; padding:12px; border-radius:12px; border:1.5px solid var(--neutralLight); font-size:0.85rem; appearance:none; background:#fff;">
                                     <option>Turno Mañana</option>
                                     <option>Turno Tarde</option>
                                     <option>Turno Noche</option>
-                                    <option>Guardia</option>
+                                    <option>Guardia 24h</option>
                                 </select>
                             </div>
                         </div>
 
                         <!-- Panel dinámico -->
-                        <div id="f-dynamic-container" style="padding:15px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;">
+                        <div id="f-dynamic-container" style="padding:18px; background:#fff; border-radius:16px; border:1px solid var(--neutralLight); box-shadow:0 4px 6px rgba(0,0,0,0.02);">
                             <!-- Inyectado por updateFormFields -->
                         </div>
 
                         <div class="form-group">
-                            <label style="font-weight:700; font-size:0.7rem; color:var(--neutralSecondary); text-transform:uppercase;">Nota / Comentario Adicional</label>
-                            <textarea id="f-note" rows="3" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--neutralLight); font-size:0.85rem; resize:none;" placeholder="Detalles u observaciones..."></textarea>
+                            <label style="font-weight:700; font-size:0.7rem; color:var(--neutralSecondary); text-transform:uppercase; margin-bottom:6px; display:block;">${isAmendment ? 'Detalle de la Corrección' : 'Nota Detallada'}</label>
+                            <textarea id="f-note" rows="4" style="width:100%; padding:14px; border-radius:12px; border:1.5px solid var(--neutralLight); font-size:0.85rem; resize:none;" placeholder="${isAmendment ? 'Describa el error y la información correcta...' : 'Describa el procedimiento, respuesta o novedad...'}" required></textarea>
                         </div>
 
-                        <div style="background:#fffbeb; border:1px solid #fcd34d; padding:10px; border-radius:8px; font-size:0.72rem; color:#92400e; display:flex; gap:10px; align-items:center;">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            <span>Este registro es <b>INMUTABLE</b>. Revise bien antes de guardar.</span>
+                        <div style="background:#fffbeb; border:1px solid #fcd34d; padding:12px; border-radius:12px; font-size:0.75rem; color:#92400e; display:flex; gap:12px; align-items:center;">
+                            <i class="fa-solid fa-circle-info" style="font-size:1.1rem; opacity:0.8;"></i>
+                            <span>Los registros son <b>permanentes e inalterables</b>. Las correcciones aparecerán como enmiendas vinculadas.</span>
                         </div>
                     </form>
                 </div>
-                <div style="padding:15px; border-top:1px solid var(--neutralLight); display:flex; gap:10px; flex-shrink:0;">
-                    <button id="btn-cancel-f" style="flex:1; padding:12px; border-radius:12px; border:1px solid var(--neutralLight); background:#fff; font-weight:700; font-size:0.85rem;">Cancelar</button>
-                    <button id="btn-save-f" style="flex:2; padding:12px; border-radius:12px; border:none; background:var(--green); color:#fff; font-weight:800; font-size:0.9rem;">Finalizar Registro</button>
+                <div style="padding:15px 20px 25px; background:#fff; border-top:1px solid var(--neutralLight); display:flex; gap:12px; flex-shrink:0;">
+                    <button id="btn-cancel-f" style="flex:1; padding:14px; border-radius:14px; border:1.5px solid var(--neutralLight); background:#fff; font-weight:700; font-size:0.9rem; color:var(--neutralSecondary);">Cerrar</button>
+                    <button id="btn-save-f" style="flex:2; padding:14px; border-radius:14px; border:none; background:var(--themePrimary); color:#fff; font-weight:800; font-size:0.9rem; box-shadow:0 6px 15px rgba(0,59,105,0.25);">
+                        <i class="fa-solid fa-check-circle"></i> ${isAmendment ? 'Guardar Enmienda' : 'Guardar Registro'}
+                    </button>
                 </div>
             </div>
         `;
@@ -271,35 +320,38 @@ export function mountTreatments(root, { store, user }) {
         overlay.onclick = (e) => { if (e.target === overlay) close(); };
 
         overlay.querySelector('#btn-save-f').onclick = () => {
-            const type = typeSelect.value;
+            const type = isAmendment ? 'amendment' : typeSelect.value;
             const shift = overlay.querySelector('#f-shift').value;
             const note = overlay.querySelector('#f-note').value.trim();
 
-            let detail = '';
-            if (type === 'treatment') {
-                const proc = overlay.querySelector('#f-proc').value;
-                const reg = overlay.querySelector('#f-region').value;
-                const resp = overlay.querySelector('#f-resp').value;
-                detail = `Procedimiento: ${proc || 'No especificado'} | Región: ${reg || '—'} | Respuesta: ${resp || '—'}`;
-            } else if (type === 'medication') {
-                const med = overlay.querySelector('#f-med').value;
-                const dose = overlay.querySelector('#f-dose').value;
-                const route = overlay.querySelector('#f-route').value;
-                detail = `Admin: ${med || '—'} | Dosis: ${dose || '—'} | Vía: ${route || '—'}`;
-            } else if (type === 'vitals') {
-                const pa = overlay.querySelector('#f-pa').value;
-                const fc = overlay.querySelector('#f-fc').value;
-                const t = overlay.querySelector('#f-temp').value;
-                const s = overlay.querySelector('#f-spo2').value;
-                detail = `SV: ${pa ? 'PA:' + pa : ''} ${fc ? 'FC:' + fc : ''} ${t ? 'T:' + t : ''} ${s ? 'SpO2:' + s : ''}`.trim();
-            }
-
-            if (note) detail += (detail ? ' | Obs: ' : '') + note;
-
-            if (!detail && !note) {
-                alert('Por favor ingrese algún detalle para el registro.');
+            if (!note) {
+                alert('Por favor ingrese el detalle del registro.');
                 return;
             }
+
+            let detail = '';
+            if (!isAmendment) {
+                if (type === 'treatment') {
+                    const proc = overlay.querySelector('#f-proc').value;
+                    const resp = overlay.querySelector('#f-resp').value;
+                    detail = `PROCEDIMIENTO: ${proc || '—'} | RESPUESTA: ${resp || '—'}`;
+                } else if (type === 'medication') {
+                    const med = overlay.querySelector('#f-med').value;
+                    const dose = overlay.querySelector('#f-dose').value;
+                    const route = overlay.querySelector('#f-route').value;
+                    detail = `MEDICACIÓN: ${med || '—'} | DOSIS: ${dose || '—'} | VÍA: ${route || '—'}`;
+                } else if (type === 'vitals') {
+                    const pa = overlay.querySelector('#f-pa').value;
+                    const fc = overlay.querySelector('#f-fc').value;
+                    const t = overlay.querySelector('#f-temp').value;
+                    const s = overlay.querySelector('#f-spo2').value;
+                    detail = `SIGNOS: ${pa ? 'PA:' + pa : ''} ${fc ? 'FC:' + fc : ''} ${t ? 'T:' + t : ''} ${s ? 'SpO2:' + s : ''}`.trim();
+                }
+            } else {
+                detail = `ENMIENDA AL REGISTRO (#${amendingLog.id.substring(5)}): ${note}`;
+            }
+
+            if (note && !isAmendment) detail += (detail ? ' | OBSERVACIÓN: ' : '') + note;
 
             const entry = {
                 id: 'tlog_' + Date.now(),
@@ -310,15 +362,18 @@ export function mountTreatments(root, { store, user }) {
                 userRole: user.role,
                 shift,
                 detail,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                isAmendment: isAmendment,
+                amendedLogId: isAmendment ? amendingLog.id : null
             };
 
-            const allLogs = store.get('treatmentLogs') || [];
-            allLogs.push(entry);
-            store.set('treatmentLogs', allLogs);
+            store.add('treatmentLogs', entry);
 
             close();
             render();
+            if (typeof window.UI !== 'undefined') {
+                window.UI.showToast(isAmendment ? 'Enmienda registrada' : 'Registro guardado', 'var(--green)');
+            }
         };
     }
 

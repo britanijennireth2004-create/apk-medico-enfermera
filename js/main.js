@@ -9,13 +9,16 @@ import { mountNotifications } from './notifications.js';
 import { mountClinical } from './clinical.js';
 import { mountTriaje } from './triaje.js';
 import { mountTreatments } from './treatments.js';
+import { generatePrescriptionPDF } from './pdf.js';
 
-class DoctorApp {
+
+class HospitalApp {
     constructor() {
         this.bus = null;
         this.store = null;
         this.user = null;   // user record
         this.doctorRecord = null;   // doctors[] record
+        this.nurseRecord = null;    // nurses[] record
         this.currentView = 'login';
         this.currentAppointmentId = null;
         this.currentPatient = null;
@@ -26,11 +29,8 @@ class DoctorApp {
         this.bus = createBus();
         this.store = await createStore(this.bus);
 
-        // Auto-login como médico
-        const users = this.store.get('users');
-        this.user = users.find(u => u.role === 'doctor') || users[0];
-        const doctors = this.store.get('doctors');
-        this.doctorRecord = doctors.find(d => d.id === this.user.doctorId) || doctors[0];
+        // Intentar autologin si hay sesión (simulado)
+        // Por ahora dejamos que el login manual maneje la carga de registros
 
         // Mostrar App Container pero ocultar Header/BottomNav inicialmente si estamos en login
         document.querySelector('.app-container').style.display = 'flex';
@@ -60,9 +60,18 @@ class DoctorApp {
 
     // ── NAVIGATION ──────────────────────────────────────────────────────────
     setupNavigation() {
+        const isDoctor = this.user?.role === 'doctor';
+        const isNurse = this.user?.role === 'nurse';
+
         // Bottom nav
         document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => this.navigate(item.dataset.view));
+            // Filtrar botones inferiores
+            if (isNurse && (item.dataset.view === 'agenda' || item.dataset.view === 'consultation')) {
+                item.style.display = 'none';
+            } else {
+                item.style.display = 'flex';
+                item.onclick = () => this.navigate(item.dataset.view);
+            }
         });
 
         // Botón de notificaciones (campana)
@@ -86,11 +95,40 @@ class DoctorApp {
         const toggle = document.getElementById('menu-toggle');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
+        const role = this.user?.role || 'doctor';
 
         toggle.onclick = () => {
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
         };
+
+        // Filtrar items del sidebar según rol
+        document.querySelectorAll('.sidebar-item[data-view]').forEach(item => {
+            const view = item.dataset.view;
+            let show = true;
+
+            if (role === 'nurse') {
+                if (['agenda', 'availability'].includes(view)) show = false;
+                if (item.id === 'accordion-citas') show = false; // El acordeón se maneja aparte
+            }
+
+            item.style.display = show ? 'flex' : 'none';
+
+            if (show) {
+                item.onclick = (e) => {
+                    e.preventDefault();
+                    this.navigate(view);
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                };
+            }
+        });
+
+        // Especial para el acordeón de citas (solo doctores)
+        const accContainer = document.getElementById('accordion-citas');
+        if (accContainer) {
+            accContainer.style.display = (role === 'doctor') ? 'block' : 'none';
+        }
 
         // Items de navegación directa
         document.querySelectorAll('.sidebar-item[data-view]').forEach(item => {
@@ -102,19 +140,12 @@ class DoctorApp {
             });
         });
 
-        // Acordeón de Citas
+        // Acordeón de Citas (Lógica)
         const accBtn = document.getElementById('accordion-citas-btn');
-        const accContent = document.getElementById('accordion-citas-content');
-        const accContainer = document.getElementById('accordion-citas');
-
         if (accBtn) {
-            accBtn.addEventListener('click', () => {
-                const isOpen = accContainer.classList.toggle('open');
-                // Si se abre, asegurarnos de que la vista de Mis Citas se precargue
-                if (isOpen && this.currentView !== 'new-appointment' && this.currentView !== 'my-appointments') {
-                    // No navegamos, solo abrimos el sub-menú
-                }
-            });
+            accBtn.onclick = () => {
+                accContainer.classList.toggle('open');
+            };
         }
     }
 
@@ -126,7 +157,7 @@ class DoctorApp {
             item.classList.toggle('active', item.dataset.view === viewId);
         });
 
-        // Sidebar highlight (mismo comportamiento que .nav-btn.active en la web)
+        // Sidebar highlight
         document.querySelectorAll('.sidebar-item[data-view]').forEach(item => {
             item.classList.toggle('active', item.dataset.view === viewId);
         });
@@ -170,23 +201,42 @@ class DoctorApp {
     }
 
     async refreshAll() {
-        UI.renderHeader(this.user);
+        UI.renderHeader(this.user, this.doctorRecord || this.nurseRecord);
         this.updateStats();
         this.renderHome();
     }
 
     // ── STATS ───────────────────────────────────────────────────────────────
     updateStats() {
+        const role = this.user?.role || 'doctor';
         const appointments = this.store.get('appointments');
-        const mine = appointments.filter(a => a.doctorId === this.doctorRecord?.id);
-        const todayStr = new Date().toDateString();
-        const today = mine.filter(a => new Date(a.dateTime).toDateString() === todayStr);
+        const triage = this.store.get('triaje') || [];
+        const treat = this.store.get('treatmentLogs') || [];
 
-        UI.updateStatsUI({
-            total: today.length,
-            pending: today.filter(a => a.status === 'scheduled').length,
-            done: today.filter(a => ['completed', 'finalized'].includes(a.status)).length
-        }, this._countUnread());
+        const todayStr = new Date().toDateString();
+
+        let stats = { total: 0, pending: 0, done: 0 };
+
+        if (role === 'doctor') {
+            const mine = appointments.filter(a => a.doctorId === this.doctorRecord?.id);
+            const today = mine.filter(a => new Date(a.dateTime).toDateString() === todayStr);
+            stats = {
+                total: today.length,
+                pending: today.filter(a => a.status === 'scheduled').length,
+                done: today.filter(a => ['completed', 'finalized'].includes(a.status)).length
+            };
+        } else if (role === 'nurse') {
+            // Stats para enfermería: Triajes hoy y tratamientos registrados hoy
+            const triageToday = triage.filter(t => new Date(t.createdAt).toDateString() === todayStr);
+            const treatToday = treat.filter(tr => tr.userId === this.user.id && new Date(tr.timestamp).toDateString() === todayStr);
+            stats = {
+                total: triageToday.length + treatToday.length,
+                pending: triageToday.filter(t => t.status === 'pending').length,
+                done: triageToday.filter(t => t.status === 'completed').length + treatToday.length
+            };
+        }
+
+        UI.updateStatsUI(stats, this._countUnread());
     }
 
     _countUnread() {
@@ -207,9 +257,37 @@ class DoctorApp {
 
     // ── RENDER VIEWS ────────────────────────────────────────────────────────
     renderHome() {
-        const all = this.store.get('appointments');
-        const mine = all.filter(a => a.doctorId === this.doctorRecord?.id);
-        UI.renderHomeView(mine, this.store, (id) => this.openSheet(id));
+        const role = this.user?.role || 'doctor';
+
+        if (role === 'doctor') {
+            const all = this.store.get('appointments');
+            const mine = all.filter(a => a.doctorId === this.doctorRecord?.id);
+            UI.renderHomeView(mine, this.store, (id) => this.openSheet(id));
+        } else if (role === 'nurse') {
+            // Para enfermeras, mostrar triajes pendientes en lugar de citas
+            const triage = this.store.get('triaje') || [];
+            const pending = triage.filter(t => t.status === 'pending' || t.status === 'in_progress');
+
+            // Reutilizar UI.renderHomeView pero adaptada (o crear una nueva)
+            // Por simplicidad para el prototipo, adaptaremos renderHomeView en ui.js 
+            // o pasaremos los datos de triaje mapeados como "citas"
+            const fakeAppointments = pending.map(t => ({
+                id: t.id,
+                patientId: t.patientId,
+                dateTime: t.createdAt,
+                reason: `Triaje: ${t.symptoms}`,
+                status: t.status === 'in_progress' ? 'scheduled' : 'pending',
+                _isTriage: true
+            }));
+
+            UI.renderHomeView(fakeAppointments, this.store, (id) => {
+                this.navigate('triaje');
+            });
+
+            // Cambiar título de la sección dinámicamente
+            const title = document.querySelector('#view-home .section-title');
+            if (title) title.textContent = 'Pacientes para Triaje';
+        }
     }
 
     renderLogin() {
@@ -253,6 +331,17 @@ class DoctorApp {
             };
         }
 
+        const resetBtn = document.getElementById('force-reset-link');
+        if (resetBtn) {
+            resetBtn.onclick = (e) => {
+                e.preventDefault();
+                if (confirm('¿Forzar actualización de datos?\nSe cerrará la sesión y se restaurarán los valores por defecto.')) {
+                    localStorage.clear();
+                    window.location.reload();
+                }
+            };
+        }
+
         btn.onclick = () => {
             const userIn = document.getElementById('login-username').value;
             const passIn = document.getElementById('login-password').value;
@@ -269,15 +358,23 @@ class DoctorApp {
 
                     if (found) {
                         this.user = found;
-                        const doctors = this.store.get('doctors');
-                        this.doctorRecord = doctors.find(d => d.id === this.user.doctorId) || doctors[0];
+
+                        if (this.user.role === 'doctor') {
+                            const doctors = this.store.get('doctors');
+                            this.doctorRecord = doctors.find(d => d.id === this.user.doctorId) || doctors[0];
+                            this.nurseRecord = null;
+                        } else if (this.user.role === 'nurse') {
+                            const nurses = this.store.get('nurses');
+                            this.nurseRecord = nurses.find(n => n.id === this.user.nurseId) || nurses[0];
+                            this.doctorRecord = null;
+                        }
 
                         this.setupNavigation();
                         this.setupSidebar();
                         await this.refreshAll();
                         this.navigate('home');
                     } else {
-                        alert('Credenciales inválidas. Intente con daruiz / demo123');
+                        alert('Credenciales inválidas. Intente con daruiz / demo123 o esoler / demo123');
                         btn.innerText = 'INGRESAR AL SISTEMA';
                         btn.disabled = false;
                     }
@@ -291,7 +388,10 @@ class DoctorApp {
         if (!root) return;
         mountClinical(root, {
             store: this.store,
-            user: this.user
+            user: this.user,
+            onPrintPrescription: (record, doctor, patient) => {
+                generatePrescriptionPDF(record, doctor, patient);
+            }
         });
     }
 
@@ -331,14 +431,68 @@ class DoctorApp {
     }
 
     renderProfile() {
-        UI.renderProfileView(this.user, this.doctorRecord, (data) => {
-            alert(`✅ Perfil actualizado:\n• Nombre: ${data.name}\n• Email: ${data.email}\n• Teléfono: ${data.phone}`);
+        const record = this.doctorRecord || this.nurseRecord;
+        UI.renderProfileView(this.user, record, (data) => {
+            // 1. Actualizar datos de usuario
+            this.user.name = data.name;
+            this.user.email = data.email;
+            this.user.specialty = data.specialty;
+            this.store.update('users', this.user.id, {
+                name: data.name,
+                email: data.email,
+                specialty: data.specialty
+            });
+
+            // 2. Actualizar datos de perfil específico
+            if (this.user.role === 'doctor' && this.doctorRecord) {
+                const updatedDoctor = {
+                    ...this.doctorRecord,
+                    name: data.name,
+                    email: data.email,
+                    phone: data.phone,
+                    specialty: data.specialty,
+                    subspecialties: data.subspecialties,
+                    signature: data.signature
+                };
+                this.store.update('doctors', this.doctorRecord.id, updatedDoctor);
+                this.doctorRecord = updatedDoctor;
+            } else if (this.user.role === 'nurse' && this.nurseRecord) {
+                const updatedNurse = {
+                    ...this.nurseRecord,
+                    name: data.name,
+                    email: data.email,
+                    phone: data.phone,
+                    specialty: data.specialty,
+                    subspecialties: data.subspecialties
+                };
+                this.store.update('nurses', this.nurseRecord.id, updatedNurse);
+                this.nurseRecord = updatedNurse;
+            }
+
+            // 3. Notificar y refrescar UI
+            UI.renderHeader(this.user, this.doctorRecord || this.nurseRecord);
+            UI.showToast('Perfil actualizado correctamente');
+            alert(`✅ Perfil de ${data.name} actualizado con éxito.`);
         });
     }
 
     renderAvailability() {
         UI.renderAvailabilityView(this.doctorRecord, (data) => {
-            alert(`✅ Disponibilidad actualizada:\n• Jornada: ${data.workStartHour}:00 – ${data.workEndHour}:00\n• Cupos: ${data.dailyCapacity} por día`);
+            if (this.doctorRecord) {
+                const updated = {
+                    ...this.doctorRecord,
+                    workStartHour: parseInt(data.workStartHour),
+                    workEndHour: parseInt(data.workEndHour),
+                    dailyCapacity: parseInt(data.dailyCapacity),
+                    duration: parseInt(data.duration),
+                    schedule: data.schedule
+                };
+                this.store.update('doctors', this.doctorRecord.id, updated);
+                this.doctorRecord = updated;
+
+                UI.showToast('Configuración de agenda guardada');
+                alert(`✅ Agenda actualizada:\n• Jornada: ${data.workStartHour}:00 – ${data.workEndHour}:00\n• Cupos: ${data.dailyCapacity} pacientes/día\n• Días: ${data.schedule}`);
+            }
         });
     }
 
@@ -362,18 +516,27 @@ class DoctorApp {
                 type: 'consultation',
                 vitalSigns: data.vitalSigns,
                 symptoms: data.symptoms,
-                diagnosis: data.diagnosis,
+                diagnosis: data.diagnosis_codes || data.diagnosis, // Usar los códigos seleccionados si existen
                 treatment: data.treatment,
-                prescriptions: [{ medication: data.prescriptions }],
-                followUp: data.followUp,
+                prescriptions: data.prescriptions,
+                labOrders: data.labOrders,
+                restIndications: data.restIndications,
+                physicalExam: data.physicalExam,
                 status: 'finalized',
                 createdAt: Date.now(),
                 createdBy: this.user.id
             });
             // Marcar la cita como finalizada
             this.store.update('appointments', this.currentAppointmentId, { status: 'finalized' });
-            alert(`\u2705 Consulta guardada exitosamente para ${this.currentPatient.name}.`);
+
+            if (confirm('✅ Consulta guardada exitosamente. ¿Desea descargar la receta médica PDF ahora?')) {
+                generatePrescriptionPDF(data, this.doctorRecord, this.currentPatient);
+            }
+
             this.navigate('home');
+        }, (previewData) => {
+            // Callback de previsualización (botón PDF)
+            generatePrescriptionPDF(previewData, this.doctorRecord, this.currentPatient);
         });
     }
 
@@ -551,6 +714,6 @@ class DoctorApp {
 }
 
 // Instancia global para eventos inline
-window.app = new DoctorApp();
+window.app = new HospitalApp();
 window._apkApp = window.app;   // alias usado desde el módulo de citas
 document.addEventListener('DOMContentLoaded', () => window.app.init());

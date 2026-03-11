@@ -70,7 +70,7 @@
                         <div class="login-form-panel" style="width: 100%;">
                             <!-- Logo alineado a la izquierda -->
                             <img src="img/logotipo.png" alt="Logo HUMNT"
-                                style="width: 80px; margin-bottom: 1.5rem; display: block;" />
+                                style="width: 80px; margin-bottom: 0.75rem; display: block;" />
 
                             <h1 class="login-title">Hospital Universitario Manuel Núñez Tovar</h1>
                             <p class="login-subtitle">Sistema de Gestión de Citas Médicas</p>
@@ -101,10 +101,16 @@
                                     SESIÓN</button>
                             </form>
 
-                            <div class="login-recover" style="margin-top: 1rem; text-align: center;">
+                            <div class="login-recover"
+                                style="margin-top: 1rem; text-align: center; display: flex; flex-direction: column; gap: 10px;">
                                 <a href="#" id="recover-link"
                                     style="color: var(--themePrimary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">¿Olvidó
                                     su contraseña? Recuperar acceso</a>
+
+                                <a href="#" id="force-reset-link"
+                                    style="color: var(--neutralSecondary); text-decoration: none; font-size: 0.75rem; opacity: 0.7;">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Forzar actualización de datos
+                                </a>
                             </div>
                         </div>
                     </div>
