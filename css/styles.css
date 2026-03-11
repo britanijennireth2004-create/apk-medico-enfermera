@@ -76,6 +76,11 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+html {
+    height: 100vh;
+    height: -webkit-fill-available;
+}
+
 body {
     background-color: var(--bg-color);
     color: var(--text-main);
@@ -211,20 +216,14 @@ body {
 .main-content {
     flex: 1;
     padding: 0 24px 180px;
-    /* Incrementado para evitar que el bottom-nav tape botones */
+    /* Espacio para bottom-nav */
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
-    height: 100%;
 }
 
-/* Permitir scroll en vistas de formulario largas */
-.view.active {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
+
 
 .section-title {
     font-size: 1.1rem;
@@ -536,10 +535,9 @@ body {
 }
 
 .view.active {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    min-height: min-content;
+    display: block;
+    /* Volver a block para asegurar flujo natural de scroll */
+    width: 100%;
 }
 
 #loading-screen {
