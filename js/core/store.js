@@ -5,63 +5,16 @@ export async function createStore(bus) {
 
   // Datos de ejemplo más completos
   const defaultData = {
-    version: '3.4',
+    version: 'APK-1.0',
     users: [
       {
-        id: 'admin_1',
-        username: 'admin',
-        password: 'admin123',
-        role: 'admin',
-        name: 'Administrador',
-        email: 'admin@hospital.com',
-        isActive: true,
-        createdAt: Date.now()
-      },
-      {
-        id: 'patient_1',
-        username: 'maria',
-        password: 'demo123',
-        role: 'patient',
-        name: 'María Gómez',
-        email: 'maria@email.com',
-        patientId: 'p_1',
-        phone: '555-0101',
-        birthDate: '1985-03-12',
-        isActive: true,
-        createdAt: Date.now()
-      },
-      {
-        id: 'doctor_1',
+        id: 'user_daruiz',
         username: 'daruiz',
         password: 'demo123',
         role: 'doctor',
         name: 'Dra. Ana Ruiz',
         email: 'ana.ruiz@hospital.com',
         doctorId: 'd_1',
-        specialty: 'Medicina General',
-        license: 'MG-12345',
-        isActive: true,
-        createdAt: Date.now()
-      },
-      {
-        id: 'nurse_1',
-        username: 'enfermera',
-        password: 'demo123',
-        role: 'nurse',
-        name: 'Enf. Elena Soler',
-        email: 'elena.soler@hospital.com',
-        nurseId: 'n_1',
-        isActive: true,
-        createdAt: Date.now()
-      },
-      {
-        id: 'receptionist_1',
-        username: 'recepcion',
-        password: 'demo123',
-        role: 'receptionist',
-        name: 'Recepcionista Carla',
-        receptionistId: 'r_1',
-        email: 'carla.recepcion@hospital.com',
         isActive: true,
         createdAt: Date.now()
       }
@@ -131,7 +84,7 @@ export async function createStore(bus) {
     doctors: [
       {
         id: 'd_1',
-        name: 'Dra. Ana Ruiz',
+        name: 'Dr. Manuel Valero',
         specialty: 'Medicina General',
         subspecialties: ['Nutrición Clínica'],
         healthSystemNumber: 'MPPS-45678',
@@ -139,31 +92,12 @@ export async function createStore(bus) {
         contractType: 'Fijo',
         areaId: 'area_1',
         license: 'MG-12345',
-        email: 'ana.ruiz@hospital.com',
+        email: 'mvalero@hospital.com',
         phone: '555-0201',
         schedule: 'Lun-Vie 8:00-16:00',
         workStartHour: 8,
         workEndHour: 16,
         dailyCapacity: 20,
-        isActive: true,
-        createdAt: Date.now()
-      },
-      {
-        id: 'd_2',
-        name: 'Dr. Luis Pérez',
-        specialty: 'Cardiología',
-        subspecialties: ['Arritmias'],
-        healthSystemNumber: 'MPPS-98765',
-        hireDate: '2018-03-10',
-        contractType: 'Fijo',
-        areaId: 'area_3',
-        license: 'C-67890',
-        email: 'luis.perez@hospital.com',
-        phone: '555-0202',
-        schedule: 'Mar-Jue 10:00-18:00',
-        workStartHour: 10,
-        workEndHour: 18,
-        dailyCapacity: 15,
         isActive: true,
         createdAt: Date.now()
       }
@@ -242,12 +176,12 @@ export async function createStore(bus) {
         patientId: 'p_1',
         doctorId: 'd_1',
         areaId: 'area_1',
-        dateTime: new Date().setHours(10, 30, 0, 0),
+        dateTime: new Date().setHours(new Date().getHours() + 1, 0, 0, 0),
         duration: 30,
         status: 'scheduled',
         priority: 'rutina',
         type: 'control',
-        reason: 'Fiebre persistente',
+        reason: 'Fiebre persistente y malestar general',
         notes: '',
         modality: 'presencial',
         virtualLink: '',
@@ -257,20 +191,20 @@ export async function createStore(bus) {
         startDateTime: null,
         endDateTime: null,
         createdAt: Date.now(),
-        createdBy: 'admin_1'
+        createdBy: 'user_daruiz'
       },
       {
         id: 'apt_today_2',
         patientId: 'p_2',
         doctorId: 'd_1',
         areaId: 'area_1',
-        dateTime: new Date().setHours(8, 0, 0, 0),
+        dateTime: new Date().setHours(new Date().getHours() - 2, 0, 0, 0),
         duration: 30,
         status: 'completed',
         priority: 'rutina',
         type: 'control',
-        reason: 'Revisión mensual',
-        notes: '',
+        reason: 'Hipertensión arterial - Seguimiento',
+        notes: 'Paciente estable con tratamiento actual',
         modality: 'presencial',
         virtualLink: '',
         consultorioId: 'con_1',
@@ -279,19 +213,19 @@ export async function createStore(bus) {
         startDateTime: null,
         endDateTime: null,
         createdAt: Date.now(),
-        createdBy: 'admin_1'
+        createdBy: 'user_daruiz'
       },
       {
-        id: 'apt_1',
+        id: 'apt_tomorrow_1',
         patientId: 'p_1',
         doctorId: 'd_1',
         areaId: 'area_1',
-        dateTime: Date.now() + 2 * 24 * 60 * 60 * 1000,
+        dateTime: Date.now() + 24 * 60 * 60 * 1000,
         duration: 30,
         status: 'scheduled',
         priority: 'rutina',
         type: 'control',
-        reason: 'Consulta general',
+        reason: 'Resultados de laboratorio',
         notes: '',
         modality: 'presencial',
         virtualLink: '',
@@ -301,29 +235,7 @@ export async function createStore(bus) {
         startDateTime: null,
         endDateTime: null,
         createdAt: Date.now(),
-        createdBy: 'admin_1'
-      },
-      {
-        id: 'apt_2',
-        patientId: 'p_2',
-        doctorId: 'd_2',
-        areaId: 'area_3',
-        dateTime: Date.now() + 6 * 24 * 60 * 60 * 1000,
-        duration: 45,
-        status: 'scheduled',
-        priority: 'urgencia',
-        type: 'primera_vez',
-        reason: 'Dolor en el pecho',
-        notes: 'Requiere electrocardiograma',
-        modality: 'virtual',
-        virtualLink: 'https://meet.hospital-humnt.com/humnt-cardio-2026',
-        consultorioId: '',
-        equipmentIds: ['eq_1'],
-        arrivalDateTime: null,
-        startDateTime: null,
-        endDateTime: null,
-        createdAt: Date.now(),
-        createdBy: 'patient_2'
+        createdBy: 'user_daruiz'
       }
     ],
 

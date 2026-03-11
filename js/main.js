@@ -36,8 +36,8 @@ class DoctorApp {
         document.querySelector('.app-container').style.display = 'flex';
         this.updateChromeVisibility();
 
-        // Esperar 5 segundos (según requerimiento del usuario)
-        await new Promise(res => setTimeout(res, 5000));
+        // Esperar 3 segundos (según requerimiento del usuario)
+        await new Promise(res => setTimeout(res, 3000));
 
         // Ocultar splash
         const loader = document.getElementById('loading-screen');
@@ -277,7 +277,7 @@ class DoctorApp {
                         await this.refreshAll();
                         this.navigate('home');
                     } else {
-                        alert('Credenciales inválidas. Intente con mvalero / admin123');
+                        alert('Credenciales inválidas. Intente con daruiz / demo123');
                         btn.innerText = 'INGRESAR AL SISTEMA';
                         btn.disabled = false;
                     }
