@@ -100,6 +100,23 @@ export function mountTriaje(root, { store, user }) {
     };
 
     // ── Obtener cola ──────────────────────────────────────────────────────────
+    function injectStyles() {
+        if (!document.getElementById('tj-module-styles')) {
+            const s = document.createElement('style');
+            s.id = 'tj-module-styles';
+            s.textContent = `
+                @keyframes pulse-red {
+                    0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5); transform: scale(1); }
+                    50% { box-shadow: 0 0 0 15px rgba(220, 38, 38, 0); transform: scale(1.05); }
+                    100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); transform: scale(1); }
+                }
+                @keyframes emergency-flash { 0%,100%{background:#dc2626} 50%{background:#ef4444} }
+                .pulse-red-anim { animation: pulse-red 2s infinite; }
+            `;
+            document.head.appendChild(s);
+        }
+    }
+    injectStyles();
     function getQueue() {
         const records = store.get('triaje') || [];
         const patients = store.get('patients') || [];
@@ -210,37 +227,37 @@ export function mountTriaje(root, { store, user }) {
                 ${r.vitalSigns.heartRate ? `<div style="font-size:0.65rem;"><b>FC</b> ${r.vitalSigns.heartRate}lpm</div>` : ''}
                 ${r.vitalSigns.temperature ? `<div style="font-size:0.65rem;"><b>T°</b> ${r.vitalSigns.temperature}°C</div>` : ''}
                 ${r.vitalSigns.spo2 ? `<div style="font-size:0.65rem;"><b>SpO₂</b> ${r.vitalSigns.spo2}%</div>` : ''}
+                ${r.vitalSigns.respiratoryRate ? `<div style="font-size:0.65rem;"><b>FR</b> ${r.vitalSigns.respiratoryRate}</div>` : ''}
+                ${r.vitalSigns.painLevel ? `<div style="font-size:0.65rem;"><b>Dolor</b> ${r.vitalSigns.painLevel}/10</div>` : ''}
             </div>` : ''}
             <!-- Acciones -->
-            <div style="display:flex;gap:6px;justify-content:flex-end;">
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
                 ${r.status === 'waiting' ? `
                 <button class="tj-btn-attend" data-id="${r.id}" title="Atender"
-                    style="background:var(--teal);color:#fff;border:none;border-radius:8px;
-                           padding:8px 14px;font-size:0.95rem;cursor:pointer;">
+                    style="background:var(--teal);color:#fff;border:none;border-radius:50%;
+                           width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.1);">
                     <i class="fa-solid fa-stethoscope"></i>
                 </button>` : ''}
                 ${r.status === 'in_progress' ? `
                 <button class="tj-btn-complete" data-id="${r.id}" title="Completar"
-                    style="background:var(--green);color:#fff;border:none;border-radius:8px;
-                           padding:8px 14px;font-size:0.95rem;cursor:pointer;">
+                    style="background:var(--green);color:#fff;border:none;border-radius:50%;
+                           width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.1);">
                     <i class="fa-solid fa-circle-check"></i>
                 </button>` : ''}
-                <button class="tj-btn-view" data-id="${r.id}"
-                    style="background:var(--neutralLighterAlt,#f2f2f2);color:var(--neutralPrimary);
-                           border:1px solid var(--neutralLight);border-radius:8px;padding:8px 14px;
-                           font-size:0.95rem;cursor:pointer;" title="Ver Detalle">
+                <button class="tj-btn-view" data-id="${r.id}" title="Ver Detalle"
+                    style="background:var(--themeLighterAlt);color:var(--themePrimary);border:none;border-radius:50%;
+                           width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.05);">
                     <i class="fa-solid fa-eye"></i>
                 </button>
-                <button class="tj-btn-print-ind" data-id="${r.id}"
-                    style="background:var(--neutralLighterAlt,#f2f2f2);color:var(--themePrimary);
-                           border:1px solid var(--neutralLight);border-radius:8px;padding:8px 14px;
-                           font-size:0.95rem;cursor:pointer;" title="Imprimir Reporte">
-                    <i class="fa-solid fa-print"></i>
+                <button class="tj-btn-print-ind" data-id="${r.id}" title="Imprimir PDF"
+                    style="background:#f8fafc;color:var(--neutralSecondary);border:1.5px solid var(--neutralLight);border-radius:50%;
+                           width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;">
+                    <i class="fa-solid fa-file-pdf"></i>
                 </button>
                 ${r.status !== 'completed' ? `
-                <button class="tj-btn-cancel" data-id="${r.id}"
-                    style="background:rgba(220,38,38,.08);color:#dc2626;border:1px solid rgba(220,38,38,.2);
-                           border-radius:8px;padding:8px 14px;font-size:0.95rem;cursor:pointer;" title="Cancelar">
+                <button class="tj-btn-cancel" data-id="${r.id}" title="Cancelar"
+                    style="background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;
+                           border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;">
                     <i class="fa-solid fa-ban"></i>
                 </button>` : ''}
             </div>
@@ -257,33 +274,31 @@ export function mountTriaje(root, { store, user }) {
         </div>
 
         <!-- Barra de acciones -->
-        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-            <button id="tj-btn-new"
-                style="display:flex;align-items:center;gap:6px;background:var(--themePrimary);color:#fff;
-                       border:none;border-radius:10px;padding:10px 14px;font-size:0.82rem;font-weight:700;cursor:pointer;flex:1;">
-                <i class="fa-solid fa-plus"></i> Nuevo Triaje
+        <div style="display:flex;gap:15px;margin-bottom:15px;justify-content:center;padding:5px 0;">
+            <button id="tj-btn-new" title="Nuevo Registro de Triaje"
+                style="background:var(--themePrimary);color:#fff;border:none;border-radius:50%;
+                       width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 15px rgba(0,59,105,0.3);flex-shrink:0;">
+                <i class="fa-solid fa-plus"></i>
             </button>
-            <button id="tj-btn-emergency"
-                style="display:flex;align-items:center;gap:6px;background:#dc2626;color:#fff;
-                       border:none;border-radius:10px;padding:10px 14px;font-size:0.82rem;font-weight:700;cursor:pointer;">
-                <i class="fa-solid fa-bell"></i> Código Rojo
+            <button id="tj-btn-emergency" title="Alerta de Emergencia" class="pulse-red-anim"
+                style="background:#dc2626;color:#fff;border:none;border-radius:50%;
+                       width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;box-shadow:0 6px 15px rgba(220,38,38,0.4);flex-shrink:0;">
+                <i class="fa-solid fa-bullhorn"></i>
             </button>
-            <button id="tj-btn-refresh"
-                style="display:flex;align-items:center;gap:6px;background:#f8f8f8;color:var(--themePrimary);
-                       border:1px solid var(--neutralLight);border-radius:10px;padding:10px 12px;font-size:0.82rem;cursor:pointer;" title="Actualizar">
+            <button id="tj-btn-refresh" title="Refrescar datos"
+                style="background:#fff;color:var(--themePrimary);border:2px solid var(--themePrimary);border-radius:50%;
+                       width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.05);flex-shrink:0;">
                 <i class="fa-solid fa-rotate"></i>
             </button>
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-            <button id="tj-btn-clear"
-                style="flex:1;display:flex;align-items:center;gap:6px;background:#f8f8f8;color:var(--neutralSecondary);
-                       border:1px solid var(--neutralLight);border-radius:10px;padding:8px 12px;font-size:0.78rem;cursor:pointer;">
-                <i class="fa-solid fa-broom"></i> Limpiar completados
+             <button id="tj-btn-clear" title="Limpiar completados"
+                style="background:#f1f5f9;color:var(--neutralSecondary);border:2px solid var(--neutralLight);border-radius:50%;
+                       width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.05);flex-shrink:0;">
+                <i class="fa-solid fa-broom"></i>
             </button>
-            <button id="tj-btn-pdf"
-                style="display:flex;align-items:center;gap:6px;background:var(--neutralLight);color:var(--neutralPrimary);
-                       border:none;border-radius:10px;padding:8px 12px;font-size:0.78rem;cursor:pointer;">
-                <i class="fa-solid fa-print"></i> PDF
+            <button id="tj-btn-pdf" title="Reporte General PDF"
+                style="background:#0369a1;color:#fff;border:none;border-radius:50%;
+                       width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 10px rgba(3,105,161,0.25);flex-shrink:0;">
+                <i class="fa-solid fa-file-pdf"></i>
             </button>
         </div>
 
@@ -358,13 +373,13 @@ export function mountTriaje(root, { store, user }) {
         root.querySelector('#tj-btn-pdf')?.addEventListener('click', () => exportPDF());
 
         // Limpiar completados
-        root.querySelector('#tj-btn-clear')?.addEventListener('click', () => {
+        root.querySelector('#tj-btn-clear')?.addEventListener('click', async () => {
             const all = store.get('triaje') || [];
             const toKeep = all.filter(r => r.status !== 'completed' && r.status !== 'cancelled');
             // recargar store sin completados
             const completed = all.filter(r => r.status === 'completed' || r.status === 'cancelled');
             if (!completed.length) { showToast('No hay registros para limpiar', '#64748b'); return; }
-            if (confirm(`¿Eliminar ${completed.length} registro(s) completado(s)/cancelado(s)?`)) {
+            if (await hospitalConfirm(`¿Eliminar ${completed.length} registro(s) completado(s)/cancelado(s)?`, 'danger')) {
                 completed.forEach(r => store.remove?.('triaje', r.id));
                 showToast(`<i class="fa-solid fa-check"></i> ${completed.length} registro(s) eliminado(s)`, 'var(--green)');
                 render();
@@ -375,7 +390,7 @@ export function mountTriaje(root, { store, user }) {
         root.querySelectorAll('.tj-btn-attend').forEach(btn => {
             btn.addEventListener('click', () => {
                 store.update('triaje', btn.dataset.id, { status: 'in_progress', startedAt: Date.now() });
-                showToast('▶️ Paciente en atención', 'var(--teal)');
+                showToast('<i class="fa-solid fa-play"></i> Paciente en atención', 'var(--teal)');
                 render();
             });
         });
@@ -387,8 +402,8 @@ export function mountTriaje(root, { store, user }) {
             });
         });
         root.querySelectorAll('.tj-btn-cancel').forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (confirm('¿Cancelar este registro de triaje?')) {
+            btn.addEventListener('click', async () => {
+                if (await hospitalConfirm('¿Cancelar este registro de triaje?', 'danger')) {
                     store.update('triaje', btn.dataset.id, { status: 'cancelled' });
                     showToast('Registro cancelado', '#64748b');
                     render();
@@ -442,11 +457,11 @@ export function mountTriaje(root, { store, user }) {
 
             <!-- Tabs de navegación -->
             <div style="display:flex;background:var(--neutralLighter);padding:4px;gap:4px;flex-shrink:0;">
-                <button id="tj-tab-existing" style="flex:1;padding:10px;border:none;border-radius:12px;font-size:0.75rem;font-weight:700;cursor:pointer;background:#fff;color:var(--themePrimary);box-shadow:0 2px 4px rgba(0,0,0,.05);">
+                <button id="tj-tab-existing" style="flex:2;padding:10px;border:none;border-radius:12px;font-size:0.8rem;font-weight:700;cursor:pointer;background:#fff;color:var(--themePrimary);box-shadow:0 2px 4px rgba(0,0,0,.05);">
                     <i class="fa-solid fa-search"></i> Paciente Existente
                 </button>
-                <button id="tj-tab-new" style="flex:1;padding:10px;border:none;border-radius:12px;font-size:0.75rem;font-weight:700;cursor:pointer;background:transparent;color:var(--neutralSecondary);">
-                    <i class="fa-solid fa-user-plus"></i> + Nuevo Paciente
+                <button id="tj-tab-new" style="flex:1;display:flex;align-items:center;justify-content:center;border:none;border-radius:50%;width:44px;height:44px;font-size:1.2rem;font-weight:700;cursor:pointer;background:transparent;color:var(--neutralSecondary);" title="Nuevo Paciente">
+                    <i class="fa-solid fa-plus"></i>
                 </button>
             </div>
 
@@ -460,15 +475,11 @@ export function mountTriaje(root, { store, user }) {
                                     display:flex;align-items:center;gap:6px;margin-bottom:10px;">
                             <i class="fa-solid fa-id-card"></i> Identificación
                         </div>
-                        <div style="display:flex;gap:0;margin-bottom:8px;">
-                            <select id="tj-doc-type"
-                                style="width:60px;border:1px solid var(--neutralLight);border-right:none;
-                                       border-radius:8px 0 0 8px;padding:9px 6px;font-size:0.82rem;background:#f8f8f8;">
+                        <div class="input-group">
+                            <select id="tj-doc-type" class="select-compact">
                                 <option>V</option><option>E</option><option>J</option><option>P</option>
                             </select>
-                            <input id="tj-cedula" type="text" placeholder="Número de cédula..."
-                                style="flex:1;border:1px solid var(--neutralLight);border-radius:0 8px 8px 0;
-                                       padding:9px 12px;font-size:0.82rem;background:#f8f8f8;outline:none;">
+                            <input id="tj-cedula" type="text" placeholder="Número de cédula...">
                         </div>
                         <div id="tj-patient-feedback" style="font-size:0.78rem;margin-bottom:6px;"></div>
                         <input type="hidden" id="tj-patient-id">
@@ -486,11 +497,11 @@ export function mountTriaje(root, { store, user }) {
                         <div style="font-size:0.70rem;font-weight:800;color:var(--green);text-transform:uppercase;
                                     margin-bottom:10px;">Datos del Nuevo Paciente</div>
                         
-                        <div style="display:flex;gap:6px;margin-bottom:10px;">
-                             <select id="tj-new-doc-type" class="tj-in" style="width:70px;">
+                        <div class="input-group" style="margin-bottom:10px;">
+                             <select id="tj-new-doc-type" class="select-compact">
                                 <option>V</option><option>E</option><option>P</option>
                              </select>
-                             <input id="tj-new-dni" type="text" class="tj-in" placeholder="DNI / Cédula *">
+                             <input id="tj-new-dni" type="text" placeholder="DNI / Cédula *">
                         </div>
                         <div style="margin-bottom:10px;">
                             <input id="tj-new-name" type="text" class="tj-in" placeholder="Nombre completo *">
@@ -593,17 +604,21 @@ export function mountTriaje(root, { store, user }) {
             </div>
 
             <!-- Footer -->
-            <div style="padding:12px 16px;background:#fff;border-top:1px solid var(--neutralLight);display:flex;gap:8px;flex-shrink:0;">
-                <button id="tj-form-cancel"
-                    style="background:var(--neutralLight);color:var(--neutralPrimary);border:none;
-                           border-radius:10px;padding:12px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;">
-                    Cancelar
+            <div style="padding:15px 16px;background:#fff;border-top:1px solid var(--neutralLight);display:flex;justify-content:center;gap:30px;flex-shrink:0;">
+                <button id="tj-form-cancel" class="btn-cancel" title="Cancelar y Salir"
+                    style="background:#f1f5f9;color:var(--neutralSecondary);border:2px solid var(--neutralLight);
+                           border-radius:50%;width:60px;height:60px;font-size:1.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
-                <button id="tj-form-save"
-                    style="flex:1;background:var(--themePrimary);color:#fff;border:none;border-radius:10px;
-                           padding:13px;font-size:0.87rem;font-weight:700;cursor:pointer;display:flex;
-                           align-items:center;justify-content:center;gap:8px;">
-                    <i class="fa-solid fa-floppy-disk"></i> Registrar Triaje
+                <button id="tj-btn-form-clear" title="Limpiar todos los campos"
+                    style="background:#fff7ed;color:#ea580c;border:2px solid #fdba74;
+                           border-radius:50%;width:60px;height:60px;font-size:1.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
+                    <i class="fa-solid fa-eraser"></i>
+                </button>
+                <button id="tj-form-save" title="Guardar Registro de Triaje"
+                    style="background:var(--themePrimary);color:#fff;border:none;
+                           border-radius:50%;width:60px;height:60px;font-size:1.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,59,105,0.3);transition:all 0.2s;">
+                    <i class="fa-solid fa-check"></i>
                 </button>
             </div>
         </div>`;
@@ -635,10 +650,36 @@ export function mountTriaje(root, { store, user }) {
             secExisting.style.display = 'block'; secNew.style.display = 'none';
         });
 
+        overlay.querySelector('#tj-btn-form-clear')?.addEventListener('click', async () => {
+            if (await hospitalConfirm('¿Desea limpiar todos los campos del formulario de triaje?')) {
+                // Limpiar inputs
+                overlay.querySelectorAll('input, textarea, select').forEach(i => {
+                    if (i.id === 'tj-new-doc-type' || i.id === 'tj-doc-type' || i.id === 'tj-new-gender') return;
+                    i.value = '';
+                });
+                overlay.querySelector('#tj-patient-feedback').innerHTML = '';
+                overlay.querySelector('#tj-patient-name-box').style.display = 'none';
+                overlay.querySelector('#tj-patient-id').value = '';
+                overlay.querySelector('#tj-new-allergies-container').innerHTML = '';
+                addQuickAllergyField(overlay);
+                overlay.querySelector('#tj-suggestion-box').style.display = 'none';
+                // Reset prioridad
+                overlay.querySelector('#tj-priority-selected').value = '';
+                overlay.querySelectorAll('.tj-priority-btn').forEach(btn => {
+                    const bl = LEVELS[btn.dataset.priority];
+                    btn.style.background = bl.bg;
+                    btn.style.color = bl.color;
+                    btn.style.border = `2px solid ${bl.border}`;
+                    btn.style.transform = '';
+                });
+                showToast('Formulario limpiado', 'var(--neutralSecondary)');
+            }
+        });
+
         tabNew.addEventListener('click', () => {
             isNewPatient = true;
             tabNew.style.background = '#fff'; tabNew.style.color = 'var(--green)'; tabNew.style.boxShadow = '0 2px 4px rgba(0,0,0,.05)';
-            tabExisting.style.background = 'transparent'; tabExisting.style.color = 'var(--neutralSecondary)'; tabExisting.style.boxShadow = 'none';
+            tabExisting.style.background = 'transparent'; tabExisting.style.color = 'var(--neutralSecondary)'; tabNew.style.boxShadow = 'none';
             secNew.style.display = 'block'; secExisting.style.display = 'none';
             // Iniciar con una fila de alergia si está vacío
             if (overlay.querySelector('#tj-new-allergies-container').children.length === 0) {
@@ -763,6 +804,16 @@ export function mountTriaje(root, { store, user }) {
 
         if (!patientId) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Identifique al paciente', '#dc2626'); return false; }
 
+        // Verificar si ya está en cola (status waiting/in_progress) - Lógica unificada para evitar duplicados
+        const allTriaje = store.get('triaje') || [];
+        const existing = allTriaje.find(r =>
+            r.patientId === patientId && ['waiting', 'in_progress'].includes(r.status)
+        );
+        if (existing) {
+            showToast('<i class="fa-solid fa-triangle-exclamation"></i> El paciente ya se encuentra en la cola de triaje', '#d97706');
+            return false;
+        }
+
         const symptoms = overlay.querySelector('#tj-symptoms')?.value.trim();
         const priority = overlay.querySelector('#tj-priority-selected')?.value;
 
@@ -802,45 +853,6 @@ export function mountTriaje(root, { store, user }) {
             btn.style.border = `2px solid ${active ? lv.color : bl.border}`;
             btn.style.transform = active ? 'scale(1.05)' : '';
         });
-    }
-
-    function saveTriaje(overlay) {
-        const patientId = overlay.querySelector('#tj-patient-id')?.value;
-        const symptoms = overlay.querySelector('#tj-symptoms')?.value.trim();
-        const priority = overlay.querySelector('#tj-priority-selected')?.value;
-
-        if (!patientId) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Seleccione un paciente', '#dc2626'); return false; }
-        if (!symptoms) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Ingrese los síntomas', '#dc2626'); return false; }
-        if (!priority) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Seleccione una prioridad', '#dc2626'); return false; }
-
-        // Verificar si ya está en cola (status waiting/in_progress)
-        const existing = (store.get('triaje') || []).find(r =>
-            r.patientId === patientId && ['waiting', 'in_progress'].includes(r.status)
-        );
-        if (existing) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Paciente ya está en la cola de triaje', '#d97706'); return false; }
-
-        store.add('triaje', {
-            patientId,
-            priority,
-            symptoms,
-            observations: overlay.querySelector('#tj-observations')?.value.trim() || '',
-            vitalSigns: {
-                bloodPressure: overlay.querySelector('#tj-bp')?.value || null,
-                heartRate: overlay.querySelector('#tj-hr')?.value || null,
-                temperature: overlay.querySelector('#tj-temp')?.value || null,
-                spo2: overlay.querySelector('#tj-spo2')?.value || null,
-                respiratoryRate: overlay.querySelector('#tj-rr')?.value || null,
-                painLevel: overlay.querySelector('#tj-pain')?.value || null
-            },
-            status: 'waiting',
-            createdAt: Date.now(),
-            createdBy: user?.id || '',
-            creatorName: user?.name || ''
-        });
-
-        showToast('<i class="fa-solid fa-check"></i> Triaje registrado', LEVELS[priority].color);
-        render();
-        return true;
     }
 
     // ── SHEET: VER DETALLE ────────────────────────────────────────────────────
@@ -1016,10 +1028,9 @@ export function mountTriaje(root, { store, user }) {
             });
         });
 
-        // Atender desde detalle
         overlay.querySelector('#tj-detail-attend')?.addEventListener('click', e => {
             store.update('triaje', e.target.closest('button').dataset.id, { status: 'in_progress', startedAt: Date.now() });
-            showToast('▶️ Paciente en atención', 'var(--teal)');
+            showToast('<i class="fa-solid fa-play"></i> Paciente en atención', 'var(--teal)');
             closeDetail();
             render();
         });
@@ -1032,11 +1043,10 @@ export function mountTriaje(root, { store, user }) {
             render();
         });
 
-        // Transferir a consulta
         overlay.querySelector('#tj-detail-transfer')?.addEventListener('click', e => {
             const btn = e.target.closest('button');
             store.update('triaje', btn.dataset.id, { status: 'completed', completedAt: Date.now(), transferredToConsultation: true });
-            showToast('↗️ Transferido a consulta médica', 'var(--themePrimary)');
+            showToast('<i class="fa-solid fa-share"></i> Transferido a consulta médica', 'var(--themePrimary)');
             closeDetail();
             render();
             // Navegar a consulta si app está disponible
@@ -1115,17 +1125,16 @@ export function mountTriaje(root, { store, user }) {
                 </div>
             </div>
 
-            <div style="padding:12px 16px;background:#fff;border-top:1px solid #fca5a5;display:flex;gap:8px;flex-shrink:0;">
-                <button id="tj-emg-cancel"
-                    style="background:#f8f8f8;color:var(--neutralSecondary);border:1px solid var(--neutralLight);
-                           border-radius:10px;padding:12px 16px;font-size:0.85rem;cursor:pointer;">
-                    Cancelar
+            <div style="padding:15px 16px;background:#fff;border-top:1px solid #fca5a5;display:flex;justify-content:center;gap:30px;flex-shrink:0;">
+                <button id="tj-emg-cancel" title="Cancelar"
+                    style="background:#f1f5f9;color:var(--neutralSecondary);border:2px solid var(--neutralLight);
+                           border-radius:50%;width:60px;height:60px;font-size:1.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
-                <button id="tj-emg-confirm"
-                    style="flex:1;background:#dc2626;color:#fff;border:none;border-radius:10px;
-                           padding:13px;font-size:0.87rem;font-weight:700;cursor:pointer;display:flex;
-                           align-items:center;justify-content:center;gap:8px;">
-                    <i class="fa-solid fa-siren-on"></i> Activar Alerta de Emergencia
+                <button id="tj-emg-confirm" title="¡ACTIVAR ALERTA AHORA!"
+                    style="background:#dc2626;color:#fff;border:none;
+                           border-radius:50%;width:60px;height:60px;font-size:1.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(220,38,38,0.4);animation:emergency-flash 1s infinite;">
+                    <i class="fa-solid fa-bullhorn"></i>
                 </button>
             </div>
         </div>`;
@@ -1142,11 +1151,18 @@ export function mountTriaje(root, { store, user }) {
         overlay.querySelector('#tj-emg-cancel')?.addEventListener('click', closeEmg);
         overlay.addEventListener('click', e => { if (e.target === overlay) closeEmg(); });
 
-        overlay.querySelector('#tj-emg-confirm')?.addEventListener('click', () => {
+        overlay.querySelector('#tj-emg-confirm')?.addEventListener('click', async () => {
             const type = overlay.querySelector('#tj-emg-type')?.value;
             const location = overlay.querySelector('#tj-emg-location')?.value.trim();
             const desc = overlay.querySelector('#tj-emg-desc')?.value.trim();
             if (!location) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Indique la ubicación', '#dc2626'); return; }
+
+            const labelForConfirm = {
+                code_blue: 'Código Azul', code_red: 'Código Rojo', code_black: 'Código Negro',
+                mass_casualty: 'Múltiples víctimas', evacuation: 'Evacuación', other: 'Emergencia'
+            }[type] || type;
+
+            if (!await hospitalConfirm(`¿Está seguro de activar una alerta de ${labelForConfirm} en ${location}?`, 'danger')) return;
 
             // Registrar la emergencia en el store
             const typeLabels = {
@@ -1523,20 +1539,21 @@ export function mountTriaje(root, { store, user }) {
             }
             .tj-in {
                 width: 100%;
-                border: 1px solid var(--neutralLight);
-                border-radius: 8px;
-                padding: 8px 10px;
-                font-size: 0.82rem;
+                border: 1.5px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 12px 14px;
+                font-size: 0.88rem;
                 font-family: inherit;
-                background: #f8f8f8;
+                background: #ffffff;
                 box-sizing: border-box;
                 outline: none;
+                transition: all 0.2s ease;
                 resize: vertical;
             }
             .tj-in:focus {
                 border-color: var(--themePrimary);
                 background: #fff;
-                box-shadow: 0 0 0 3px rgba(0,59,105,.1);
+                box-shadow: 0 0 0 4px rgba(0,59,105,.1);
             }`;
         document.head.appendChild(s);
     }

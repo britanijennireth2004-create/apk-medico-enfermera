@@ -117,9 +117,9 @@ export function mountClinical(root, { store, user, onPrintPrescription }) {
         ].map(k => `
             <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid var(--neutralLight);
                         display:flex;align-items:center;gap:10px;min-width:0;">
-                <div style="width:36px;height:36px;border-radius:10px;background:${k.color}20;display:flex;
+                <div style="width:40px;height:40px;border-radius:50%;background:${k.color}20;display:flex;
                             align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="fa-solid ${k.icon}" style="color:${k.color};font-size:0.9rem;"></i>
+                    <i class="fa-solid ${k.icon}" style="color:${k.color};font-size:1rem;"></i>
                 </div>
                 <div style="min-width:0;">
                     <div style="font-size:1.1rem;font-weight:800;color:var(--neutralDark);">${k.val}</div>
@@ -211,9 +211,9 @@ export function mountClinical(root, { store, user, onPrintPrescription }) {
                 </div>
                 <div style="text-align:right;flex-shrink:0;">
                     <div style="font-size:0.68rem;color:var(--neutralSecondary);margin-bottom:4px;">${records.length} registro${records.length !== 1 ? 's' : ''}</div>
-                    <div style="width:28px;height:28px;border-radius:8px;background:var(--themeLighterAlt,#eff5f9);
+                    <div style="width:32px;height:32px;border-radius:50%;background:var(--themeLighterAlt,#eff5f9);
                                 display:flex;align-items:center;justify-content:center;">
-                        <i class="fa-solid fa-file-medical" style="font-size:0.75rem;color:var(--themePrimary);"></i>
+                        <i class="fa-solid fa-file-medical" style="font-size:0.9rem;color:var(--themePrimary);"></i>
                     </div>
                 </div>
             </div>`;
@@ -322,18 +322,18 @@ export function mountClinical(root, { store, user, onPrintPrescription }) {
             </div>
 
             <!-- Acciones del footer -->
-            <div style="padding:12px 16px;background:#fff;border-top:1px solid var(--neutralLight);display:flex;gap:10px;flex-shrink:0;">
+            <div style="padding:12px 16px;background:#fff;border-top:1px solid var(--neutralLight);display:flex;justify-content:flex-end;gap:16px;flex-shrink:0;">
                 ${records.length ? `
-                <button id="hc-btn-pdf"
-                    style="display:flex;align-items:center;gap:7px;background:var(--neutralLight);color:var(--neutralPrimary);
-                           border:none;border-radius:10px;padding:11px 14px;font-size:0.82rem;font-weight:600;cursor:pointer;">
-                    <i class="fa-solid fa-print"></i> PDF
+                <button id="hc-btn-pdf" title="Generar PDF"
+                    style="display:flex;align-items:center;justify-content:center;background:#dc2626;color:#fff;
+                           border:none;border-radius:50%;width:56px;height:56px;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.15);">
+                    <i class="fa-solid fa-print"></i>
                 </button>` : ''}
-                <button id="hc-btn-add"
-                    style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
-                           background:var(--themePrimary);color:#fff;border:none;border-radius:10px;
-                           padding:13px;font-size:0.87rem;font-weight:700;cursor:pointer;">
-                    <i class="fa-solid fa-plus"></i> Nuevo Registro
+                <button id="hc-btn-add" title="Nuevo Registro"
+                    style="display:flex;align-items:center;justify-content:center;
+                           background:var(--themePrimary);color:#fff;border:none;border-radius:50%;
+                           width:56px;height:56px;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.15);">
+                    <i class="fa-solid fa-plus"></i>
                 </button>
             </div>
         </div>`;
@@ -602,17 +602,16 @@ export function mountClinical(root, { store, user, onPrintPrescription }) {
             </div>
 
             <!-- Footer -->
-            <div style="padding:12px 16px;background:#fff;border-top:1px solid var(--neutralLight);display:flex;gap:10px;flex-shrink:0;">
-                <button id="rf-cancel-btn"
+            <div style="padding:12px 16px;background:#fff;border-top:1px solid var(--neutralLight);display:flex;justify-content:center;gap:24px;flex-shrink:0;">
+                <button id="rf-cancel-btn" title="Cancelar"
                     style="background:var(--neutralLight);color:var(--neutralPrimary);border:none;
-                           border-radius:10px;padding:12px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;">
-                    Cancelar
+                           border-radius:50%;width:56px;height:56px;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                    <i class="fa-solid fa-ban"></i>
                 </button>
-                <button id="rf-save-btn"
-                    style="flex:1;background:var(--green);color:#fff;border:none;border-radius:10px;
-                           padding:13px;font-size:0.87rem;font-weight:700;cursor:pointer;display:flex;
-                           align-items:center;justify-content:center;gap:8px;">
-                    <i class="fa-solid fa-circle-check"></i> Guardar Registro
+                <button id="rf-save-btn" title="Guardar Registro"
+                    style="background:var(--green);color:#fff;border:none;
+                           border-radius:50%;width:56px;height:56px;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(16,124,16,0.25);">
+                    <i class="fa-solid fa-floppy-disk"></i>
                 </button>
             </div>
         </div>`;
@@ -929,21 +928,22 @@ export function mountClinical(root, { store, user, onPrintPrescription }) {
             }
             .hc-input {
                 width: 100%;
-                border: 1px solid var(--neutralLight);
-                border-radius: 8px;
-                padding: 9px 10px;
-                font-size: 0.83rem;
+                border: 1.5px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 12px 14px;
+                font-size: 0.88rem;
                 font-family: inherit;
-                background: var(--neutralLighterAlt, #f8f8f8);
+                background: #ffffff;
                 box-sizing: border-box;
                 color: var(--neutralDark);
                 outline: none;
+                transition: all 0.2s ease;
                 resize: vertical;
             }
             .hc-input:focus {
                 border-color: var(--themePrimary);
                 background: #fff;
-                box-shadow: 0 0 0 3px rgba(0,59,105,.1);
+                box-shadow: 0 0 0 4px rgba(0,59,105,.1);
             }`;
         document.head.appendChild(style);
     }

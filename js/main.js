@@ -11,6 +11,9 @@ import { mountTriaje } from './triaje.js';
 import { mountTreatments } from './treatments.js';
 import { generatePrescriptionPDF } from './pdf.js';
 
+window.hospitalAlert = UI.hospitalAlert;
+window.hospitalConfirm = UI.hospitalConfirm;
+
 
 class HospitalApp {
     constructor() {
@@ -56,6 +59,12 @@ class HospitalApp {
         const bottomNav = document.querySelector('.bottom-nav');
         if (header) header.style.display = isLogin ? 'none' : 'flex';
         if (bottomNav) bottomNav.style.display = isLogin ? 'none' : 'flex';
+    }
+
+    async logout() {
+        if (await hospitalConfirm('¿Estás seguro de cerrar sesión?', 'warning')) {
+            location.reload();
+        }
     }
 
     // ── NAVIGATION ──────────────────────────────────────────────────────────
@@ -365,7 +374,7 @@ class HospitalApp {
                             await this.refreshAll();
                             this.navigate('home');
                         } else {
-                            alert('Credenciales inválidas. Intente con daruiz / demo123 o esoler / demo123');
+                            await hospitalAlert('Credenciales inválidas. Intente con daruiz / demo123 o esoler / demo123', 'error');
                             btn.innerHTML = 'INICIAR SESIÓN';
                             btn.disabled = false;
                         }
@@ -464,7 +473,7 @@ class HospitalApp {
             // 3. Notificar y refrescar UI
             UI.renderHeader(this.user, this.doctorRecord || this.nurseRecord);
             UI.showToast('Perfil actualizado correctamente');
-            alert(`Perfil de ${data.name} actualizado con éxito.`);
+            hospitalAlert(`Perfil de ${data.name} actualizado con éxito.`, 'success');
         });
     }
 
@@ -483,7 +492,7 @@ class HospitalApp {
                 this.doctorRecord = updated;
 
                 UI.showToast('Configuración de agenda guardada');
-                alert(`Agenda actualizada:\n• Jornada: ${data.workStartHour}:00 – ${data.workEndHour}:00\n• Cupos: ${data.dailyCapacity} pacientes/día\n• Días: ${data.schedule}`);
+                hospitalAlert(`Agenda actualizada:\n• Jornada: ${data.workStartHour}:00 – ${data.workEndHour}:00\n• Cupos: ${data.dailyCapacity} pacientes/día\n• Días: ${data.schedule}`, 'success');
             }
         });
     }
@@ -521,9 +530,11 @@ class HospitalApp {
             // Marcar la cita como finalizada
             this.store.update('appointments', this.currentAppointmentId, { status: 'finalized' });
 
-            if (confirm('Consulta guardada exitosamente. ¿Desea descargar la receta médica PDF ahora?')) {
-                generatePrescriptionPDF(data, this.doctorRecord, this.currentPatient);
-            }
+            (async () => {
+                if (await hospitalConfirm('Consulta guardada exitosamente. ¿Desea descargar la receta médica PDF ahora?', 'question')) {
+                    generatePrescriptionPDF(data, this.doctorRecord, this.currentPatient);
+                }
+            })();
 
             this.navigate('home');
         }, (previewData) => {
@@ -544,7 +555,7 @@ class HospitalApp {
                 const dt = new Date(newApt.dateTime);
                 const dateStr = dt.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
                 const timeStr = dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                alert(`Cita registrada para el ${dateStr} a las ${timeStr}.`);
+                hospitalAlert(`Cita registrada para el ${dateStr} a las ${timeStr}.`, 'success');
                 this.navigate('my-appointments');
             }
         });

@@ -852,8 +852,8 @@ export async function createStore(bus) {
     },
 
     // ===== UTILIDADES =====
-    reset() {
-      if (confirm('¿Estás seguro de resetear todos los datos? Se perderá toda la información.')) {
+    async reset() {
+      if (await hospitalConfirm('¿Estás seguro de resetear todos los datos? Se perderá toda la información.', 'danger')) {
         data = deepClone(defaultData);
         saveData(data);
 

@@ -79,9 +79,11 @@ export function mountTreatments(root, { store, user }) {
                     </div>
 
                     <!-- Botón Flotante / Inferior de Acción -->
-                    <button id="btn-add-trx" style="background:var(--themePrimary); color:#fff; border:none; padding:15px; border-radius:12px; font-weight:800; font-size:0.9rem; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 4px 15px rgba(0,59,105,0.3);">
-                        ${SVG.plus} Registrar Novedad / Relevo
-                    </button>
+                    <div style="display:flex;justify-content:flex-end;">
+                        <button id="btn-add-trx" title="Registrar Novedad / Relevo" style="background:var(--themePrimary); color:#fff; border:none; width:56px; height:56px; border-radius:50%; font-size:1.5rem; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 15px rgba(0,59,105,0.3); flex-shrink:0;">
+                            ${SVG.plus}
+                        </button>
+                    </div>
                 ` : `
                     <div style="text-align:center; padding:50px 20px; color:var(--neutralSecondary);">
                         <div style="font-size:3rem; opacity:0.2; margin-bottom:15px;">${SVG.clipboard}</div>
@@ -141,9 +143,11 @@ export function mountTreatments(root, { store, user }) {
                         </div>
                         
                         ${!isAmendment ? `
-                            <button class="btn-amend" data-id="${l.id}" style="margin-top:10px; background:none; border:none; color:var(--themePrimary); font-size:0.65rem; font-weight:700; padding:0; display:flex; align-items:center; gap:4px;">
-                                <i class="fa-solid fa-pen-nib"></i> Corregir / Enmendar
-                            </button>
+                             <button class="btn-amend" data-id="${l.id}" title="Corregir / Enmendar" 
+                                     style="margin-top:10px; background:var(--themeLighterAlt); border:none; color:var(--themePrimary); 
+                                            width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+                                 <i class="fa-solid fa-pen-nib"></i>
+                             </button>
                         ` : ''}
                     </div>
                 </div>
@@ -205,7 +209,7 @@ export function mountTreatments(root, { store, user }) {
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                             <div class="form-group">
                                 <label style="font-weight:700; font-size:0.7rem; color:var(--neutralSecondary); text-transform:uppercase; margin-bottom:6px; display:block;">Categoría</label>
-                                <select id="f-type" style="width:100%; padding:12px; border-radius:12px; border:1.5px solid var(--neutralLight); font-size:0.85rem; appearance:none; background:#fff;" ${isAmendment ? 'disabled' : ''}>
+                                <select id="f-type" ${isAmendment ? 'disabled' : ''}>
                                     ${Object.entries(ENTRY_TYPES).map(([k, v]) => `
                                         <option value="${k}" ${isAmendment && k === 'amendment' ? 'selected' : (isAmendment && k === amendingLog.entryType ? 'selected' : '')}>${v.label}</option>
                                     `).join('')}
@@ -213,7 +217,7 @@ export function mountTreatments(root, { store, user }) {
                             </div>
                             <div class="form-group">
                                 <label style="font-weight:700; font-size:0.7rem; color:var(--neutralSecondary); text-transform:uppercase; margin-bottom:6px; display:block;">Turno / Jornada</label>
-                                <select id="f-shift" style="width:100%; padding:12px; border-radius:12px; border:1.5px solid var(--neutralLight); font-size:0.85rem; appearance:none; background:#fff;">
+                                <select id="f-shift">
                                     <option>Turno Mañana</option>
                                     <option>Turno Tarde</option>
                                     <option>Turno Noche</option>
@@ -229,7 +233,7 @@ export function mountTreatments(root, { store, user }) {
 
                         <div class="form-group">
                             <label style="font-weight:700; font-size:0.7rem; color:var(--neutralSecondary); text-transform:uppercase; margin-bottom:6px; display:block;">${isAmendment ? 'Detalle de la Corrección' : 'Nota Detallada'}</label>
-                            <textarea id="f-note" rows="4" style="width:100%; padding:14px; border-radius:12px; border:1.5px solid var(--neutralLight); font-size:0.85rem; resize:none;" placeholder="${isAmendment ? 'Describa el error y la información correcta...' : 'Describa el procedimiento, respuesta o novedad...'}" required></textarea>
+                            <textarea id="f-note" rows="4" style="resize:none;" placeholder="${isAmendment ? 'Describa el error y la información correcta...' : 'Describa el procedimiento, respuesta o novedad...'}" required></textarea>
                         </div>
 
                         <div style="background:#fffbeb; border:1px solid #fcd34d; padding:12px; border-radius:12px; font-size:0.75rem; color:#92400e; display:flex; gap:12px; align-items:center;">
@@ -238,10 +242,12 @@ export function mountTreatments(root, { store, user }) {
                         </div>
                     </form>
                 </div>
-                <div style="padding:15px 20px 25px; background:#fff; border-top:1px solid var(--neutralLight); display:flex; gap:12px; flex-shrink:0;">
-                    <button id="btn-cancel-f" style="flex:1; padding:14px; border-radius:14px; border:1.5px solid var(--neutralLight); background:#fff; font-weight:700; font-size:0.9rem; color:var(--neutralSecondary);">Cerrar</button>
-                    <button id="btn-save-f" style="flex:2; padding:14px; border-radius:14px; border:none; background:var(--themePrimary); color:#fff; font-weight:800; font-size:0.9rem; box-shadow:0 6px 15px rgba(0,59,105,0.25);">
-                        <i class="fa-solid fa-check-circle"></i> ${isAmendment ? 'Guardar Enmienda' : 'Guardar Registro'}
+                <div style="padding:15px 20px 25px; background:#fff; border-top:1px solid var(--neutralLight); display:flex; justify-content:center; gap:24px; flex-shrink:0;">
+                    <button id="btn-cancel-f" title="Cerrar" style="width:56px; height:56px; border-radius:50%; border:1.5px solid var(--neutralLight); background:#fff; color:var(--neutralSecondary); display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0;">
+                        <i class="fa-solid fa-ban"></i>
+                    </button>
+                    <button id="btn-save-f" title="${isAmendment ? 'Guardar Enmienda' : 'Guardar Registro'}" style="width:56px; height:56px; border-radius:50%; border:none; background:var(--themePrimary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.5rem; box-shadow:0 6px 15px rgba(0,59,105,0.25); flex-shrink:0;">
+                        <i class="fa-solid ${isAmendment ? 'fa-check-circle' : 'fa-floppy-disk'}"></i>
                     </button>
                 </div>
             </div>
@@ -257,32 +263,32 @@ export function mountTreatments(root, { store, user }) {
             if (type === 'treatment') {
                 dynContainer.innerHTML = `
                     <div style="display:flex; flex-direction:column; gap:10px;">
-                        <input type="text" id="f-proc" class="input" placeholder="Procedimiento (ej: Curación, Fisioterapia)" style="background:#fff;">
-                        <input type="text" id="f-region" class="input" placeholder="Región/Área corporal" style="background:#fff;">
-                        <input type="text" id="f-mats" class="input" placeholder="Materiales utilizados" style="background:#fff;">
-                        <select id="f-resp" class="input" style="background:#fff;">
+                        <input type="text" id="f-proc" placeholder="Procedimiento (ej: Curación, Fisioterapia)">
+                        <input type="text" id="f-region" placeholder="Región/Área corporal">
+                        <input type="text" id="f-mats" placeholder="Materiales utilizados">
+                        <select id="f-resp">
                             <option value="">Respuesta del Paciente</option>
                             <option>Tolerancia Buena</option>
                             <option>Tolerancia Regular</option>
                             <option>Mala Tolerancia</option>
                         </select>
-                        <input type="text" id="f-comps" class="input" placeholder="Complicaciones observadas..." style="background:#fff;">
+                        <input type="text" id="f-comps" placeholder="Complicaciones observadas...">
                     </div>
                 `;
             } else if (type === 'medication') {
                 dynContainer.innerHTML = `
                     <div style="display:flex; flex-direction:column; gap:10px;">
-                        <input type="text" id="f-med" class="input" placeholder="Medicamento y presentación" style="background:#fff;">
+                        <input type="text" id="f-med" placeholder="Medicamento y presentación">
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                            <input type="text" id="f-dose" class="input" placeholder="Dosis" style="background:#fff;">
-                            <select id="f-route" class="input" style="background:#fff;">
+                            <input type="text" id="f-dose" placeholder="Dosis">
+                            <select id="f-route">
                                 <option value="">Vía</option>
                                 ${ROUTES.map(r => `<option>${r}</option>`).join('')}
                             </select>
                         </div>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                            <input type="text" id="f-freq" class="input" placeholder="Frecuencia (ej: c/8h)" style="background:#fff;">
-                            <input type="time" id="f-time" class="input" style="background:#fff;">
+                            <input type="text" id="f-freq" placeholder="Frecuencia (ej: c/8h)">
+                            <input type="time" id="f-time">
                         </div>
                     </div>
                 `;
@@ -291,27 +297,27 @@ export function mountTreatments(root, { store, user }) {
                     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
                         <div>
                             <label style="font-size:0.65rem; font-weight:700;">PA (mmHg)</label>
-                            <input type="text" id="f-pa" class="input" placeholder="120/80" style="background:#fff;">
+                            <input type="text" id="f-pa" placeholder="120/80">
                         </div>
                         <div>
                             <label style="font-size:0.65rem; font-weight:700;">FC (lpm)</label>
-                            <input type="number" id="f-fc" class="input" placeholder="72" style="background:#fff;">
+                            <input type="number" id="f-fc" placeholder="72">
                         </div>
                         <div>
                             <label style="font-size:0.65rem; font-weight:700;">FR (rpm)</label>
-                            <input type="number" id="f-fr" class="input" placeholder="16" style="background:#fff;">
+                            <input type="number" id="f-fr" placeholder="16">
                         </div>
                         <div>
                             <label style="font-size:0.65rem; font-weight:700;">Temp (°C)</label>
-                            <input type="number" step="0.1" id="f-temp" class="input" placeholder="36.5" style="background:#fff;">
+                            <input type="number" step="0.1" id="f-temp" placeholder="36.5">
                         </div>
                         <div>
                             <label style="font-size:0.65rem; font-weight:700;">SpO2 (%)</label>
-                            <input type="number" id="f-spo2" class="input" placeholder="98" style="background:#fff;">
+                            <input type="number" id="f-spo2" placeholder="98">
                         </div>
                         <div>
                             <label style="font-size:0.65rem; font-weight:700;">Glucemia</label>
-                            <input type="number" id="f-gluc" class="input" placeholder="mg/dL" style="background:#fff;">
+                            <input type="number" id="f-gluc" placeholder="mg/dL">
                         </div>
                     </div>
                 `;
@@ -333,13 +339,13 @@ export function mountTreatments(root, { store, user }) {
         overlay.querySelector('#btn-cancel-f').onclick = close;
         overlay.onclick = (e) => { if (e.target === overlay) close(); };
 
-        overlay.querySelector('#btn-save-f').onclick = () => {
+        overlay.querySelector('#btn-save-f').onclick = async () => {
             const type = isAmendment ? 'amendment' : typeSelect.value;
             const shift = overlay.querySelector('#f-shift').value;
             const note = overlay.querySelector('#f-note').value.trim();
 
             if (!note) {
-                alert('Por favor ingrese el detalle del registro.');
+                await hospitalAlert('Por favor ingrese el detalle del registro.', 'warning');
                 return;
             }
 

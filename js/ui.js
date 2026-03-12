@@ -62,6 +62,189 @@ export function showToast(msg, color = '#003b69') {
     }, 2800);
 }
 
+export function hospitalConfirm(message, type = 'warning') {
+    return new Promise(resolve => {
+        const existing = document.getElementById('hospital-confirm');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'hospital-confirm';
+        modal.className = 'hospital-modal-overlay';
+
+        const config = {
+            warning: { color: 'var(--yellowDark)', icon: `<i class="fa-solid fa-triangle-exclamation" style="font-size:3rem;color:var(--yellowDark)"></i>` },
+            danger: { color: 'var(--red)', icon: `<i class="fa-solid fa-circle-exclamation" style="font-size:3rem;color:var(--red)"></i>` },
+            question: { color: 'var(--themePrimary)', icon: `<i class="fa-solid fa-circle-question" style="font-size:3rem;color:var(--themePrimary)"></i>` },
+            success: { color: 'var(--green)', icon: `<i class="fa-solid fa-circle-check" style="font-size:3rem;color:var(--green)"></i>` }
+        };
+
+        const s = config[type] || config.warning;
+
+        modal.innerHTML = `
+            <div class="hospital-modal-content">
+                <div style="padding: 2.5rem 1.5rem 2rem; text-align: center;">
+                    <div style="margin-bottom: 1.25rem; display: flex; justify-content: center;">${s.icon}</div>
+                    <div style="font-size: 1.1rem; color: var(--neutralPrimary); line-height: 1.5; font-weight: 600;">${message}</div>
+                </div>
+                <div style="padding: 1.25rem; display: flex; justify-content: center; background: #f8fafc; border-top: 1px solid #f1f5f9; gap: 0.75rem;">
+                    <button id="hc-cancel" style="flex: 1; padding: 0.8rem; font-weight: 700; border-radius: 12px; cursor: pointer; color: #64748b; background: white; border: 2px solid #e2e8f0; font-size: 0.9rem;">CANCELAR</button>
+                    <button id="hc-ok" style="flex: 1.5; background: ${s.color}; border: none; padding: 0.8rem; font-weight: 800; border-radius: 12px; cursor: pointer; color: white; font-size: 0.9rem; box-shadow: 0 4px 12px ${s.color}44;">CONFIRMAR</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const finish = (result) => {
+            modal.querySelector('.hospital-modal-content').classList.add('hospital-modal-close-anim');
+            modal.style.opacity = '0';
+            modal.style.transition = 'opacity 0.2s ease-in';
+            setTimeout(() => { modal.remove(); resolve(result); }, 200);
+        };
+
+        modal.querySelector('#hc-ok').onclick = () => finish(true);
+        modal.querySelector('#hc-cancel').onclick = () => finish(false);
+    });
+}
+
+export function hospitalAlert(message, type = 'info') {
+    return new Promise(resolve => {
+        const existing = document.getElementById('hospital-alert');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'hospital-alert';
+        modal.className = 'hospital-modal-overlay';
+
+        const config = {
+            info: { color: 'var(--themePrimary)', icon: `<i class="fa-solid fa-circle-info" style="font-size:3rem;color:var(--themePrimary)"></i>` },
+            success: { color: 'var(--green)', icon: `<i class="fa-solid fa-circle-check" style="font-size:3rem;color:var(--green)"></i>` },
+            warning: { color: 'var(--yellowDark)', icon: `<i class="fa-solid fa-triangle-exclamation" style="font-size:3rem;color:var(--yellowDark)"></i>` },
+            error: { color: 'var(--red)', icon: `<i class="fa-solid fa-circle-xmark" style="font-size:3rem;color:var(--red)"></i>` }
+        };
+
+        const s = config[type] || config.info;
+
+        modal.innerHTML = `
+            <div class="hospital-modal-content">
+                <div style="padding: 2.5rem 1.5rem 2rem; text-align: center;">
+                    <div style="margin-bottom: 1.25rem; display: flex; justify-content: center;">${s.icon}</div>
+                    <div style="font-size: 1.1rem; color: var(--neutralPrimary); line-height: 1.5; font-weight: 600;">${message}</div>
+                </div>
+                <div style="padding: 1.25rem; display: flex; justify-content: center; background: #f8fafc; border-top: 1px solid #f1f5f9;">
+                    <button id="ha-ok" style="width: 100%; max-width: 200px; background: ${s.color}; border: none; padding: 0.8rem; font-weight: 800; border-radius: 12px; cursor: pointer; color: white; font-size: 0.9rem; box-shadow: 0 4px 12px ${s.color}44;">ACEPTAR</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const finish = () => {
+            modal.querySelector('.hospital-modal-content').classList.add('hospital-modal-close-anim');
+            modal.style.opacity = '0';
+            modal.style.transition = 'opacity 0.2s ease-in';
+            setTimeout(() => { modal.remove(); resolve(); }, 200);
+        };
+
+        modal.querySelector('#ha-ok').onclick = finish;
+    });
+}
+
+/**
+ * Replaces native select dropdown with a professional bottom sheet
+ */
+export function hospitalSelect(selectElement) {
+    if (!selectElement || selectElement.disabled) return Promise.resolve();
+
+    return new Promise(resolve => {
+        // Find label
+        let title = "Seleccione una opción";
+        const formGroup = selectElement.closest('.form-group') || selectElement.parentElement;
+        const label = formGroup?.querySelector('label');
+        if (label) title = label.textContent.replace('*', '').trim();
+
+        const options = Array.from(selectElement.options).map(opt => ({
+            label: opt.text,
+            value: opt.value,
+            selected: opt.selected,
+            disabled: opt.disabled
+        }));
+
+        const overlay = document.createElement('div');
+        overlay.className = 'selection-sheet-overlay';
+        overlay.innerHTML = `
+            <div class="selection-sheet">
+                <div class="selection-sheet-header">
+                    <div style="width:40px;height:4px;background:#e2e8f0;border-radius:4px;margin:0 auto 12px;"></div>
+                    <h3>${title}</h3>
+                </div>
+                <div class="selection-sheet-body">
+                    ${options.map(opt => `
+                        <div class="selection-item ${opt.selected ? 'selected' : ''} ${opt.disabled ? 'disabled' : ''}" 
+                             data-value="${opt.value}" 
+                             style="${opt.disabled ? 'opacity:0.5;pointer-events:none;' : ''}">
+                            <div class="selection-item-text">
+                                ${opt.label}
+                            </div>
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="padding:10px 20px 30px;">
+                    <button class="btn-cancel-sheet" style="width:100%;padding:16px;border-radius:14px;background:#f8fafc;border:1.5px solid #e2e8f0;font-weight:700;color:#64748b;font-size:0.95rem;">Cerrar</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const close = () => {
+            overlay.querySelector('.selection-sheet').style.transform = 'translateY(100%)';
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.remove();
+                resolve();
+            }, 300);
+        };
+
+        overlay.onclick = (e) => { if (e.target === overlay) close(); };
+        overlay.querySelector('.btn-cancel-sheet').onclick = close;
+
+        overlay.querySelectorAll('.selection-item:not(.disabled)').forEach(item => {
+            item.onclick = () => {
+                const val = item.dataset.value;
+                selectElement.value = val;
+                
+                // Trigger change events
+                selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+                
+                // For native select synchronization if any logic depends on it
+                if (typeof selectElement.onchange === 'function') {
+                    selectElement.onchange();
+                }
+
+                close();
+            };
+        });
+    });
+}
+
+/**
+ * Global Interceptor for Selects
+ */
+// Global Interceptor for Selects (Multi-platform: pointer/mouse/touch)
+['mousedown', 'touchstart'].forEach(evtType => {
+    document.addEventListener(evtType, (e) => {
+        const select = e.target.closest('select');
+        if (select && !select.classList.contains('native-select')) {
+            // Permitir preventDefault() configurando passive: false
+            e.preventDefault();
+            select.blur();
+            hospitalSelect(select);
+        }
+    }, { capture: true, passive: false });
+});
+
 
 // ─── INICIO ──────────────────────────────────────────────────────────────────
 export function renderHomeView(appointments, store, onOpenSheet) {
@@ -504,8 +687,8 @@ export function renderAvailabilityView(doctor, onSave) {
         </form>
     `;
 
-    document.getElementById('btn-block-today').onclick = () => {
-        if (confirm('¿Desea bloquear su agenda para el resto del día de hoy? No se podrán agendar nuevas citas.')) {
+    document.getElementById('btn-block-today').onclick = async () => {
+        if (await hospitalConfirm('¿Desea bloquear su agenda para el resto del día de hoy? No se podrán agendar nuevas citas.')) {
             showToast('Agenda bloqueada para hoy', 'var(--red)');
         }
     };
@@ -634,12 +817,12 @@ export function renderConsultationView(patient, appointment, medicalRecord, onSa
                 </div>
             </div>
 
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button type="button" id="btn-preview-prescription" class="btn-save" style="background:var(--themePrimary); border-radius:15px; flex:1;">
-                    <i class="fa-solid fa-file-pdf"></i> &nbsp;VISTA PREVIA
+            <div style="display:flex; justify-content:center; gap:24px; margin-top:20px;">
+                <button type="button" id="btn-preview-prescription" class="btn-save" style="background:var(--themePrimary); border-radius:50%; width: 56px; height: 56px; display:flex; align-items:center; justify-content:center; padding:0; flex:none; box-shadow:0 4px 10px rgba(0,0,0,.15);" title="Vista Previa de Receta">
+                    <i class="fa-solid fa-eye" style="font-size: 1.5rem;"></i>
                 </button>
-                <button type="submit" class="btn-save" style="background:var(--green); border-radius:15px; flex:2; font-weight:700; box-shadow:0 8px 16px rgba(16,124,16,0.25);">
-                    <i class="fa-solid fa-floppy-disk"></i> &nbsp;FINALIZAR ACTO MÉDICO
+                <button type="submit" class="btn-save" style="background:var(--green); border-radius:50%; width: 56px; height: 56px; display:flex; align-items:center; justify-content:center; padding:0; flex:none; box-shadow:0 8px 16px rgba(16,124,16,0.25);" title="Finalizar Acto Médico">
+                    <i class="fa-solid fa-check-double" style="font-size: 1.5rem;"></i>
                 </button>
             </div>
         </form>
@@ -651,13 +834,46 @@ export function renderConsultationView(patient, appointment, medicalRecord, onSa
         const fd = new FormData(form);
         const data = Object.fromEntries(fd);
 
-        // Disparar evento de previsualización
-        if (typeof onPreview === 'function') {
-            onPreview(data);
-        } else {
-            console.warn("onPreview no definido");
-            showToast('Generando vista previa...', 'var(--themePrimary)');
-        }
+        // Disparar evento de previsualización mostrando un modal con los datos
+        const previewModalHtml = `
+            <div id="preview-modal-overlay" style="position:fixed;inset:0;background:rgba(0,32,80,.5);z-index:99999;display:flex;justify-content:center;align-items:center;">
+                <div style="background:#fff;border-radius:12px;padding:24px;width:90%;max-width:500px;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+                    <h3 style="color:var(--themePrimary);margin-top:0;"><i class="fa-solid fa-eye"></i> Vista Previa</h3>
+                    <p><strong>Paciente:</strong> ${patient.name}</p>
+                    <p><strong>Motivo:</strong> ${appointment.reason}</p>
+                    <div style="max-height: 50vh; overflow-y: auto; background: var(--themeLighterAlt); padding: 12px; border-radius: 8px; font-size: 0.85rem;">
+                        <strong>Síntomas:</strong><br/>${data.symptoms || '-'}<br/><br/>
+                        <strong>Diagnóstico:</strong><br/>${data.diagnosis || '-'}<br/><br/>
+                        <strong>Tratamiento:</strong><br/>${data.prescriptions || '-'}<br/><br/>
+                        <strong>Órdenes Médicas:</strong><br/>${data.labOrders || '-'}<br/><br/>
+                        <strong>Indicaciones/Reposo:</strong><br/>${data.restIndications || '-'}
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:20px;">
+                        <button id="btn-close-preview" class="btn-save" style="background:var(--neutralLight);color:var(--neutralDark);flex:1;">
+                            <i class="fa-solid fa-ban"></i>
+                        </button>
+                        <button id="btn-confirm-pdf" class="btn-save" style="background:var(--themePrimary);flex:1;" title="Generar PDF">
+                            <i class="fa-solid fa-print"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', previewModalHtml);
+
+        document.getElementById('btn-close-preview').onclick = () => {
+            document.getElementById('preview-modal-overlay').remove();
+        };
+
+        document.getElementById('btn-confirm-pdf').onclick = () => {
+            document.getElementById('preview-modal-overlay').remove();
+            if (typeof onPreview === 'function') {
+                onPreview(data);
+            } else {
+                console.warn("onPreview no definido");
+                showToast('Generando vista previa...', 'var(--themePrimary)');
+            }
+        };
     };
 
     // --- Lógica de Búsqueda CIE-10 ---
@@ -1075,8 +1291,8 @@ export function renderMyAppointmentsView(appointments, store, currentFilter, onF
 
     // Eventos de acciones
     list.querySelectorAll('.apt-action-cancel').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (confirm('¿Desea cancelar esta cita?')) {
+        btn.addEventListener('click', async () => {
+            if (await hospitalConfirm('¿Desea cancelar esta cita?', 'danger')) {
                 store.update('appointments', btn.dataset.id, { status: 'cancelled' });
                 onFilterChange(currentFilter);
             }
@@ -1084,7 +1300,7 @@ export function renderMyAppointmentsView(appointments, store, currentFilter, onF
     });
 
     list.querySelectorAll('.apt-action-detail').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const apt = store.find('appointments', btn.dataset.id);
             const patient = apt ? store.find('patients', apt.patientId) : null;
             if (!apt || !patient) return;
@@ -1097,7 +1313,7 @@ export function renderMyAppointmentsView(appointments, store, currentFilter, onF
                 'completed': 'Atendida', 'finalized': 'Finalizada', 'cancelled': 'Cancelada'
             }[apt.status] || apt.status;
 
-            alert([
+            await hospitalAlert([
                 `DETALLE DE CITA`,
                 `———————————————`,
                 `Paciente: ${patient.name}`,

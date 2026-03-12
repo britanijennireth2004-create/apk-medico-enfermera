@@ -233,16 +233,15 @@ export function mountNewAppointmentForm({ store, doctorRecord, user, onSave }) {
             </div>
             <div class="form-group">
                 <label>Buscar por Número de Cédula *</label>
-                <div style="display:flex;gap:0;">
-                    <select id="apt-doc-type" style="width:68px;border-radius:8px 0 0 8px;border-right:none;padding:12px 8px;">
+                <div class="input-group">
+                    <select id="apt-doc-type" class="select-compact">
                         <option value="V">V</option>
                         <option value="E">E</option>
                         <option value="J">J</option>
                         <option value="P">P</option>
                     </select>
                     <input id="apt-cedula" type="text" inputmode="numeric"
-                           placeholder="Número de cédula..."
-                           style="border-radius:0 8px 8px 0;flex:1;padding:12px 14px;">
+                           placeholder="Número de cédula...">
                 </div>
                 <div id="apt-patient-feedback" style="margin-top:8px;font-size:0.82rem;min-height:22px;"></div>
                 <input type="hidden" id="apt-patient-id" name="patientId">
@@ -412,9 +411,14 @@ export function mountNewAppointmentForm({ store, doctorRecord, user, onSave }) {
         <div id="apt-global-error"
              style="display:none;background:#fee2e2;color:var(--red);border-radius:8px;padding:12px;font-size:0.83rem;margin-bottom:12px;line-height:1.6;"></div>
 
-        <button type="submit" class="btn-save" style="margin-bottom:8px;" id="apt-submit-btn">
-            <i class="fa-solid fa-calendar-check"></i>&nbsp; Registrar Cita
-        </button>
+        <div style="display:flex;justify-content:flex-end;gap:24px;margin-bottom:20px;">
+            <button type="button" class="btn-cancel" id="apt-clear-btn" title="Limpiar" style="background:var(--neutralLight);color:var(--neutralPrimary);border:none;border-radius:50%;width:56px;height:56px;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fa-solid fa-eraser"></i>
+            </button>
+            <button type="submit" class="btn-save" id="apt-submit-btn" title="Registrar Cita" style="margin:0;background:var(--themePrimary);color:#fff;border:none;border-radius:50%;width:56px;height:56px;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,59,105,0.25);flex-shrink:0;">
+                <i class="fa-solid fa-calendar-check"></i>
+            </button>
+        </div>
     </form>
     `;
 
@@ -572,6 +576,17 @@ export function mountNewAppointmentForm({ store, doctorRecord, user, onSave }) {
         return true;
     }
 
+    $('apt-clear-btn').onclick = async () => {
+        if (await hospitalConfirm('¿Desea limpiar todos los campos del formulario?')) {
+            $('new-apt-form').reset();
+            hiddenId.value = '';
+            cedulaIn.readOnly = false;
+            nameInput.readOnly = false;
+            docTypeSel.disabled = false;
+            virtualLink.style.display = 'none';
+        }
+    };
+
     // ── Submit ────────────────────────────────────────────────────────────────
     $('new-apt-form').onsubmit = async (e) => {
         e.preventDefault();
@@ -579,7 +594,7 @@ export function mountNewAppointmentForm({ store, doctorRecord, user, onSave }) {
 
         const btn = $('apt-submit-btn');
         btn.disabled = true;
-        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Registrando...`;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
 
         try {
             const fd = new FormData(e.target);
@@ -634,7 +649,7 @@ export function mountNewAppointmentForm({ store, doctorRecord, user, onSave }) {
             errBox.style.display = '';
         } finally {
             btn.disabled = false;
-            btn.innerHTML = `<i class="fa-solid fa-calendar-check"></i>&nbsp; Registrar Cita`;
+            btn.innerHTML = `<i class="fa-solid fa-calendar-check"></i>`;
         }
     };
 }
@@ -726,18 +741,21 @@ export function renderMyAppointmentsView(appointments, store, currentFilter, onF
             <div style="font-size:0.78rem;color:var(--neutralSecondary);padding-left:68px;margin-top:-4px;">
                 <i class="fa-solid fa-door-open" style="color:var(--teal);margin-right:4px;"></i>${consultorio.name}
             </div>` : ''}
-            <div style="display:flex;gap:8px;padding-left:68px;flex-wrap:wrap;">
+            <div style="display:flex;gap:10px;padding-left:68px;flex-wrap:wrap;margin-top:8px;">
                 ${apt.modality === 'virtual' && apt.virtualLink ? `
-                <a href="${apt.virtualLink}" target="_blank" class="apt-action-btn apt-action-virtual" title="Unirse a Telemedicina" style="padding: 8px 12px;">
-                    <i class="fa-solid fa-video" style="font-size:1.1rem;"></i>
+                <a href="${apt.virtualLink}" target="_blank" class="apt-action-btn" title="Unirse a Telemedicina" 
+                   style="background:var(--teal);color:#fff;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 3px 6px rgba(0,0,0,0.1);">
+                    <i class="fa-solid fa-video" style="font-size:1.15rem;"></i>
                 </a>` : ''}
                 ${canCancel ? `
-                <button class="apt-action-btn apt-action-cancel" data-id="${apt.id}" title="Cancelar cita" style="padding: 8px 12px;">
-                    <i class="fa-solid fa-ban" style="font-size:1.1rem;"></i>
+                <button class="apt-action-btn apt-action-cancel" data-id="${apt.id}" title="Cancelar cita" 
+                        style="background:#dc2626;color:#fff;border:none;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.1);">
+                    <i class="fa-solid fa-ban" style="font-size:1.15rem;"></i>
                 </button>` : ''}
-                <button class="apt-action-btn apt-action-detail" data-id="${apt.id}" title="Ver detalle de cita" style="padding: 8px 12px;">
-                    <i class="fa-solid fa-eye" style="font-size:1.1rem;"></i>
-                </button>
+            <button class="apt-action-btn apt-action-detail" data-id="${apt.id}" title="Ver detalle de cita" 
+                    style="background:var(--themeLighterAlt);color:var(--themePrimary);border:none;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.05);">
+                <i class="fa-solid fa-eye" style="font-size:1.15rem;"></i>
+            </button>
             </div>
         `;
         list.appendChild(card);
@@ -745,11 +763,11 @@ export function renderMyAppointmentsView(appointments, store, currentFilter, onF
 
     // Cancelar
     list.querySelectorAll('.apt-action-cancel').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             const apt = store.find('appointments', btn.dataset.id);
             if (!apt) return;
             const fecha = new Date(apt.dateTime).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
-            if (!confirm(`¿Cancelar la cita del ${fecha}?`)) return;
+            if (!await hospitalConfirm(`¿Cancelar la cita del ${fecha}?`, 'danger')) return;
             store.update('appointments', apt.id, {
                 status: 'cancelled', cancelledAt: Date.now(),
                 consultorioId: '', equipmentId: '', supplyId: ''
@@ -973,9 +991,9 @@ function openDetailModal(apt, store, onFilterChange, currentFilter) {
     document.getElementById('apt-detail-close-btn')?.addEventListener('click', closeModal);
 
     // Cancelar desde modal
-    document.getElementById('apt-detail-cancel')?.addEventListener('click', () => {
+    document.getElementById('apt-detail-cancel')?.addEventListener('click', async () => {
         const fecha = new Date(apt.dateTime).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
-        if (!confirm(`¿Cancelar la cita del ${fecha}?`)) return;
+        if (!await hospitalConfirm(`¿Cancelar la cita del ${fecha}?`, 'danger')) return;
         store.update('appointments', apt.id, {
             status: 'cancelled', cancelledAt: Date.now(),
             consultorioId: '', equipmentId: '', supplyId: ''

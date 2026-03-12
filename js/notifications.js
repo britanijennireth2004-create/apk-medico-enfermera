@@ -534,11 +534,11 @@ export function mountNotifications(root, { store, user }) {
         if (src && item) store.update(src, id, { starred: !item.starred });
     }
 
-    function deleteItem(id) {
+    async function deleteItem(id) {
         const src = findSrc(id);
         if (!src) return;
         if (state.folder === 'trash') {
-            if (!confirm('¿Eliminar permanentemente este mensaje?')) return;
+            if (!await hospitalConfirm('¿Eliminar permanentemente este mensaje?', 'danger')) return;
             store.remove(src, id);
         } else {
             store.update(src, id, { deleted: true });
